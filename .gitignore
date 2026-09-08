@@ -1,0 +1,51 @@
+# ---- Entorno y secretos (NUNCA versionar) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+secrets/
+**/appsettings.*.local.json
+
+# ---- .NET / ASP.NET Core ----
+bin/
+obj/
+[Oo]ut/
+[Aa]rtifacts/
+*.user
+*.suo
+*.userprefs
+.vs/
+TestResults/
+[Cc]overage*/
+*.trx
+msbuild.binlog
+project.lock.json
+
+# ---- Node / Angular ----
+node_modules/
+dist/
+.angular/
+.vitest/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Docker / datos locales ----
+deploy/**/pgdata/
+deploy/**/data/
+*.local.yml
+docker-compose.override.yml
+
+# ---- Sistema operativo / editores ----
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
