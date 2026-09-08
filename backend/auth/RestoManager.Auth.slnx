@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RestoManager.Auth.Api/RestoManager.Auth.Api.csproj" />
+    <Project Path="src/RestoManager.Auth.Application/RestoManager.Auth.Application.csproj" />
+    <Project Path="src/RestoManager.Auth.Domain/RestoManager.Auth.Domain.csproj" />
+    <Project Path="src/RestoManager.Auth.Infrastructure/RestoManager.Auth.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RestoManager.Auth.Tests/RestoManager.Auth.Tests.csproj" />
+  </Folder>
+</Solution>
