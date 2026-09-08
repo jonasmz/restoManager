@@ -63,6 +63,7 @@ especificado en `requirements/` y es la **fuente de verdad**.
 | [`docs/frontend.md`](docs/frontend.md) | Angular 22, fidelidad al template, SCSS/Bootstrap, mapeo de pantallas. |
 | [`docs/docker.md`](docs/docker.md) | Los tres contenedores, comandos contenedorizados, secretos. |
 | [`docs/git-github.md`](docs/git-github.md) | Flujo por features, ramas, Pull Requests hacia `main`, credenciales. |
+| [`docs/roadmap.md`](docs/roadmap.md) | Plan de implementación por fases. **Para implementar cualquier característica, empieza aquí.** |
 
 ## Estado del repositorio
 
