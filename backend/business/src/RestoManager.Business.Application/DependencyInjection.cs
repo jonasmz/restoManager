@@ -21,6 +21,7 @@ using RestoManager.Business.Application.Organization.Restaurants;
 using RestoManager.Business.Application.Organization.Roles;
 using RestoManager.Business.Application.Purchasing.Orders;
 using RestoManager.Business.Application.Purchasing.Suppliers;
+using RestoManager.Business.Application.Sales.Orders;
 using RestoManager.Business.Application.Tax.TaxRates;
 
 namespace RestoManager.Business.Application;
@@ -72,6 +73,14 @@ public static class DependencyInjection
         services.AddScoped<SeatReservationHandler>();
         services.AddScoped<ListReservationsHandler>();
         services.AddScoped<GetReservationHandler>();
+
+        // Ventas (Fase 6)
+        services.AddScoped<CreateOrderHandler>();
+        services.AddScoped<AddOrderItemHandler>();
+        services.AddScoped<UpdateOrderItemHandler>();
+        services.AddScoped<RemoveOrderItemHandler>();
+        services.AddScoped<ListOrdersHandler>();
+        services.AddScoped<GetOrderHandler>();
 
         // Clientes (alta rápida — Fase 8 se hace dueña)
         services.AddScoped<SaveCustomerHandler>();

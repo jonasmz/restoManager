@@ -12,8 +12,14 @@ internal sealed class OrderConfig : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> b)
     {
-        b.Property(x => x.Channel).HasMaxLength(20).IsRequired();
-        b.Property(x => x.Status).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Channel)
+            .HasConversion(v => v.ToDbValue(), v => OrderChannelExtensions.FromDbValue(v))
+            .HasMaxLength(20)
+            .IsRequired();
+        b.Property(x => x.Status)
+            .HasConversion(v => v.ToDbValue(), v => OrderStatusExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Property(x => x.TotalAmount).Money();
 
         b.ToTable(t =>
@@ -24,6 +30,13 @@ internal sealed class OrderConfig : IEntityTypeConfiguration<Order>
                 "(channel = 'MESA' AND table_id IS NOT NULL) OR " +
                 "(channel <> 'MESA' AND table_id IS NULL AND table_session_id IS NULL)");
         });
+
+        // FK NO ACTION en BD (como el DDL); EF borra los ítems huérfanos al removerlos del agregado.
+        b.HasMany(x => x.Items)
+            .WithOne()
+            .HasForeignKey(i => i.OrderId)
+            .OnDelete(DeleteBehavior.ClientCascade);
+        b.Navigation(x => x.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         b.Fk<Order, Branch>(nameof(Order.BranchId));
         b.Fk<Order, Employee>(nameof(Order.EmployeeId));
@@ -39,7 +52,7 @@ internal sealed class OrderItemConfig : IEntityTypeConfiguration<OrderItem>
     {
         b.Property(x => x.UnitPrice).Money();
         b.Property(x => x.Notes).HasMaxLength(255);
-        b.Fk<OrderItem, Order>(nameof(OrderItem.OrderId));
+        b.Ignore(x => x.LineTotal);
         b.Fk<OrderItem, MenuItem>(nameof(OrderItem.MenuItemId));
     }
 }

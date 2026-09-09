@@ -8,6 +8,7 @@ using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
 using RestoManager.Business.Domain.Purchasing;
+using RestoManager.Business.Domain.Sales;
 using RestoManager.Business.Domain.Tax;
 using RestoManager.Business.Infrastructure.Persistence;
 using RestoManager.Business.Infrastructure.Persistence.Repositories;
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<ITableSessionRepository, TableSessionRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IBranchRepository, BranchRepository>();
