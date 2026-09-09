@@ -14,6 +14,7 @@ export interface NavGroup {
 }
 
 const INV_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'] as const;
+const MENU_ROLES = ['ADMIN', 'BRANCH_MANAGER'] as const;
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -41,6 +42,25 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { label: 'Proveedores', icon: 'ti-truck-delivery', route: '/purchasing/suppliers', roles: INV_ROLES },
       { label: 'Órdenes de compra', icon: 'ti-clipboard-list', route: '/purchasing/orders', roles: INV_ROLES },
+    ],
+  },
+  {
+    title: 'Menú',
+    items: [
+      { label: 'Categorías', icon: 'ti-category', route: '/menu/categories', roles: MENU_ROLES },
+      { label: 'Platos', icon: 'ti-tools-kitchen-2', route: '/menu/items', roles: MENU_ROLES },
+    ],
+  },
+  {
+    title: 'Cocina',
+    items: [
+      { label: 'Estaciones', icon: 'ti-flame', route: '/kitchen/stations', roles: MENU_ROLES },
+    ],
+  },
+  {
+    title: 'Fiscal',
+    items: [
+      { label: 'Tasas de impuesto', icon: 'ti-percentage', route: '/fiscal/tax-rates', roles: MENU_ROLES },
     ],
   },
   {
