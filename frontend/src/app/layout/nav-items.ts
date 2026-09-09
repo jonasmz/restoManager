@@ -4,6 +4,8 @@ export interface NavItem {
   readonly icon: string; // clase de Tabler Icons, p. ej. 'ti-home'
   readonly route: string;
   readonly exact?: boolean;
+  /** Roles que ven el ítem. Vacío/ausente = visible para cualquier usuario autenticado. */
+  readonly roles?: readonly string[];
 }
 
 export interface NavGroup {
@@ -16,15 +18,18 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     title: 'Principal',
     items: [
       { label: 'Panel', icon: 'ti-home', route: '/', exact: true },
-      { label: 'Inventario', icon: 'ti-box-seam', route: '/inventory' },
-      { label: 'Reportes', icon: 'ti-receipt', route: '/reports' },
-    ],
-  },
-  {
-    title: 'Cuenta',
-    items: [
-      { label: 'Iniciar sesión', icon: 'ti-logout', route: '/auth/signin' },
-      { label: 'Registro', icon: 'ti-user-plus', route: '/auth/signup' },
+      {
+        label: 'Inventario',
+        icon: 'ti-box-seam',
+        route: '/inventory',
+        roles: ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'],
+      },
+      {
+        label: 'Reportes',
+        icon: 'ti-receipt',
+        route: '/reports',
+        roles: ['ADMIN', 'BRANCH_MANAGER'],
+      },
     ],
   },
 ];

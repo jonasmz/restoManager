@@ -151,7 +151,20 @@ claim `branch_id` (`DOM-06`), salvo `ADMIN`.
    extremo a extremo contra el compose (login → refresh → reuso → 401; alta de
    usuario; 422/409/401). Tests de integración con Postgres: pendientes (1b/1c).
 2. `feat/fase-01b-business-jwt` — validación en la Business API, `ICurrentUser`,
-   policies base, `/api/v1/me`. **Nota:** `branch_id` sale como escalar si hay una
-   sola sucursal y como array si hay varias (comportamiento de `JsonWebTokenHandler`);
-   `ICurrentUser` debe aceptar ambos.
+   policies base, `/api/v1/me`. **✅ Implementado (PR #4, apilado sobre 1a).**
+   `AddJwtBearer` con descubrimiento OIDC contra `http://backend-auth:8080`;
+   `ICurrentUser` (`CurrentUserClaims.FromPrincipal`) acepta `branch_id` escalar o
+   array; policy `RequireAdmin`; `/api/v1/me` y `/api/v1/admin-check` de prueba.
+   El emisor lógico pasa a ser la dirección de red del servicio
+   (`Auth__Issuer=http://backend-auth:8080` en compose) para que `iss` + `jwks_uri`
+   sean coherentes y alcanzables. 5 tests unitarios; verificado 401/200/403 de
+   extremo a extremo.
 3. `feat/fase-01c-auth-frontend` — `sign-in`, `AuthService`, interceptor, guards.
+   **✅ Implementado (PR #5, apilado sobre 1b).** `core/auth/` (jwt decode,
+   `TokenStorage` en localStorage, `AuthService` con señal `currentUser`, `authGuard`),
+   `authInterceptor` (bearer + cola de renovación ante 401 + redirección al fallar),
+   `sign-in` (reactive form, portado de `signin.html`), shell tras `authGuard`,
+   sidebar filtrado por rol, dropdown de usuario con email/roles + "Cerrar sesión".
+   Placeholder `sign-up` de Fase 0 eliminado. Verificado en navegador de extremo a
+   extremo (guard, login, shell, logout, credenciales inválidas; sin errores de
+   consola).
