@@ -114,7 +114,7 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 
 ## Ramas/PR (fase grande — cortar en 4)
 
-1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total. **Hecha (PR #15).**
+1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total. **Hecha (PR #16).**
 2. `feat/fase-06b-descuentos-pagos` — descuentos, pagos múltiples, gift card como
    medio de pago.
 3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa.
