@@ -37,7 +37,7 @@ antes de implementar. **No está aprobado todavía.**
 | `payments.payment_method` | `CASH`, `CARD`, `TRANSFER`, `GIFT_CARD`, `OTHER` | — | `GIFT_CARD` genera `gift_card_transactions`. |
 | `reservations.status` | `PENDING`, `CONFIRMED`, `SEATED`, `CANCELLED`, `NO_SHOW` | `PENDING→CONFIRMED→SEATED`; `PENDING/CONFIRMED→CANCELLED`; `CONFIRMED→NO_SHOW` | `RESERVED` (derivado) usa `CONFIRMED` dentro de la ventana (TBL-02). |
 | `deliveries.status` | `PENDING`, `ASSIGNED`, `IN_TRANSIT`, `DELIVERED`, `FAILED`, `CANCELLED` | `PENDING→ASSIGNED→IN_TRANSIT→DELIVERED`; `ASSIGNED/IN_TRANSIT→FAILED`; `*→CANCELLED` | `actual_time` se informa al llegar a `DELIVERED`/`FAILED`. |
-| `purchase_orders.status` | `DRAFT`, `SENT`, `PARTIALLY_RECEIVED`, `RECEIVED`, `CANCELLED` | `DRAFT→SENT→PARTIALLY_RECEIVED→RECEIVED`; `*→CANCELLED` | Movimiento `PURCHASE` al pasar a `PARTIALLY_RECEIVED`/`RECEIVED` (INV-07). |
+| `purchase_orders.status` **(APROBADO, Fase 3)** | `DRAFT`, `SENT`, `PARTIALLY_RECEIVED`, `RECEIVED`, `CANCELLED` | `DRAFT→SENT→RECEIVED`; `*→CANCELLED` | Movimiento `PURCHASE` al pasar a `RECEIVED` (INV-07). `PARTIALLY_RECEIVED` reservado para cuando se soporte recepción parcial (hoy solo total). |
 | `employee_leaves.status` | `REQUESTED`, `APPROVED`, `REJECTED`, `CANCELLED` | `REQUESTED→APPROVED/REJECTED`; `REQUESTED/APPROVED→CANCELLED` | — |
 | `employee_leaves.leave_type` | `VACATION`, `SICK`, `UNPAID`, `OTHER` | — | — |
 | `discounts.type` | `PERCENTAGE`, `FIXED_AMOUNT` | — | Define cómo se calcula `order_discounts.applied_amount`. |

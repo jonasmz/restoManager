@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using RestoManager.Business.Api;
 using RestoManager.Business.Api.Auth;
 using RestoManager.Business.Api.Endpoints;
+using RestoManager.Business.Application;
 using RestoManager.Business.Application.Abstractions;
 using RestoManager.Business.Infrastructure;
+using RestoManager.Business.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,9 +16,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 
-builder.Services.AddBusinessInfrastructure(
-    builder.Configuration.GetConnectionString("BusinessDb"));
+builder.Services.AddBusinessApplication();
+builder.Services.AddBusinessInfrastructure(builder.Configuration);
 
 // Validación del JWT emitido por la Auth API (descubrimiento OIDC + JWKS).
 var authority = builder.Configuration["Auth:Authority"];
@@ -34,7 +39,8 @@ if (authEnabled)
         });
 
     builder.Services.AddAuthorizationBuilder()
-        .AddPolicy("RequireAdmin", policy => policy.RequireRole("ADMIN"));
+        .AddPolicy("RequireAdmin", policy => policy.RequireRole("ADMIN"))
+        .AddPolicy("InventoryAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "INVENTORY"));
 }
 
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
@@ -66,6 +72,21 @@ app.MapGet("/", () => Results.Ok(new { service = "RestoManager.Business.Api", st
 if (authEnabled)
 {
     app.MapMeEndpoints();
+    app.MapInventoryEndpoints();
+    app.MapPurchasingEndpoints();
+}
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BusinessDbContext>();
+    await db.Database.MigrateAsync();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await scope.ServiceProvider
+            .GetRequiredService<RestoManager.Business.Infrastructure.Setup.BusinessDevSeeder>()
+            .SeedAsync();
+    }
 }
 
 app.Run();

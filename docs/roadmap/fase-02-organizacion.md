@@ -60,8 +60,14 @@ Pantallas de administración (patrón tabla + formulario del template):
 
 ## Criterios de aceptación
 
-- [ ] Migración baseline aplica limpio y el `script` no difiere de
-      `restaurant_schema.sql` (salvo orden y comentarios).
+- [x] **Migración baseline `InitialSchema` hecha (PR #7):** las 35 tablas de
+      `restaurant_schema.sql` modeladas en EF Core (snake_case, identity, los 9
+      `CHECK`, los `UNIQUE`, el índice único parcial de sesión abierta, todas las
+      FK sin cascada). Equivalencias cosméticas de Postgres: `varchar(n)` ↔
+      `character varying(n)`, `decimal` ↔ `numeric`, constraints con nombres
+      `fk_*`/`ck_*`/`ux_*`. `timestamp` (sin zona) ↔ `DateTime` con
+      `Kind=Unspecified` (ver `SystemClock`). Las 31 entidades no-Fase-3 son
+      "portadoras de esquema" (POCO); cada fase les añade comportamiento.
 - [ ] CRUD completo de las 7 entidades vía API, paginado y con `ProblemDetails`.
 - [ ] Toda consulta de datos de sucursal exige sucursal activa y valida `DOM-06`
       (401/403 correctos).
