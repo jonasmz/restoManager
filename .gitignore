@@ -49,3 +49,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
+
+# Claves de firma generadas en desarrollo
+keys/
