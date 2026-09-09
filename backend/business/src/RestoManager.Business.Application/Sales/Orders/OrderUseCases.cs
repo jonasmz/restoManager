@@ -14,10 +14,18 @@ namespace RestoManager.Business.Application.Sales.Orders;
 public sealed record OrderItemDto(
     int Id, int MenuItemId, int Quantity, decimal UnitPrice, decimal LineTotal, string? Notes);
 
+public sealed record OrderDiscountDto(int Id, int DiscountId, decimal AppliedAmount);
+
+public sealed record PaymentDto(
+    int Id, string PaymentMethod, decimal Amount, DateTime PaymentTime, string Status);
+
 public sealed record OrderDto(
     int Id, int BranchId, string Channel, string Status, int? TableId, int? TableSessionId,
-    int? CustomerId, int EmployeeId, DateTime OrderTime, decimal TotalAmount,
-    IReadOnlyList<OrderItemDto> Items);
+    int? CustomerId, int EmployeeId, DateTime OrderTime,
+    decimal ItemsSubtotal, decimal DiscountTotal, decimal TotalAmount, decimal ConfirmedPaid, decimal Balance,
+    IReadOnlyList<OrderItemDto> Items,
+    IReadOnlyList<OrderDiscountDto> Discounts,
+    IReadOnlyList<PaymentDto> Payments);
 
 // ─────────────────────────── Crear pedido ───────────────────────────
 
@@ -268,8 +276,14 @@ public sealed class ListOrdersHandler(IOrderRepository orders, IBranchContext br
 
     internal static OrderDto Map(Order o) => new(
         o.Id, o.BranchId, o.Channel.ToDbValue(), o.Status.ToDbValue(),
-        o.TableId, o.TableSessionId, o.CustomerId, o.EmployeeId, o.OrderTime, o.TotalAmount,
+        o.TableId, o.TableSessionId, o.CustomerId, o.EmployeeId, o.OrderTime,
+        o.ItemsSubtotal, o.DiscountTotal, o.TotalAmount, o.ConfirmedPaid, o.Balance,
         o.Items.Select(i => new OrderItemDto(i.Id, i.MenuItemId, i.Quantity, i.UnitPrice, i.LineTotal, i.Notes))
+            .ToList(),
+        o.Discounts.Select(d => new OrderDiscountDto(d.Id, d.DiscountId, d.AppliedAmount)).ToList(),
+        o.Payments
+            .Select(p => new PaymentDto(
+                p.Id, p.PaymentMethod.ToDbValue(), p.Amount, p.PaymentTime, p.Status.ToDbValue()))
             .ToList());
 }
 
@@ -277,4 +291,134 @@ public sealed class GetOrderHandler(IOrderRepository orders)
 {
     public async Task<OrderDto> HandleAsync(int id, CancellationToken ct = default)
         => ListOrdersHandler.Map(await orders.GetAsync(id, ct) ?? throw new NotFoundException("pedido", id));
+}
+
+// ─────────────────────────── Descuentos del pedido (Fase 6b) ───────────────────────────
+
+public sealed record ApplyOrderDiscountCommand(int OrderId, int DiscountId);
+
+public sealed class ApplyOrderDiscountHandler(
+    IOrderRepository orders,
+    IDiscountRepository discounts,
+    IUnitOfWork unitOfWork,
+    BranchAccessGuard access,
+    IClock clock)
+{
+    public async Task<int> HandleAsync(ApplyOrderDiscountCommand command, CancellationToken ct = default)
+    {
+        var order = await orders.GetAsync(command.OrderId, ct)
+            ?? throw new NotFoundException("pedido", command.OrderId);
+        access.EnsureCanOperate(order.BranchId);
+
+        var discount = await discounts.GetAsync(command.DiscountId, ct)
+            ?? throw new NotFoundException("descuento", command.DiscountId);
+
+        var row = order.ApplyDiscount(discount, DateOnly.FromDateTime(clock.UtcNow));
+        await unitOfWork.SaveChangesAsync(ct);
+        return row.Id;
+    }
+}
+
+public sealed record RemoveOrderDiscountCommand(int OrderId, int DiscountId);
+
+public sealed class RemoveOrderDiscountHandler(
+    IOrderRepository orders, IUnitOfWork unitOfWork, BranchAccessGuard access)
+{
+    public async Task HandleAsync(RemoveOrderDiscountCommand command, CancellationToken ct = default)
+    {
+        var order = await orders.GetAsync(command.OrderId, ct)
+            ?? throw new NotFoundException("pedido", command.OrderId);
+        access.EnsureCanOperate(order.BranchId);
+
+        order.RemoveDiscount(command.DiscountId);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
+// ─────────────────────────── Pagos (Fase 6b) ───────────────────────────
+
+public sealed record RegisterPaymentCommand(int OrderId, string Method, decimal Amount, int? GiftCardId);
+
+public sealed class RegisterPaymentValidator : AbstractValidator<RegisterPaymentCommand>
+{
+    public RegisterPaymentValidator()
+    {
+        RuleFor(x => x.Method)
+            .Must(m => PaymentMethodExtensions.TryFromDbValue(m, out _))
+            .WithMessage("Medio de pago inválido. Use CASH, CARD, TRANSFER, GIFT_CARD u OTHER.");
+        RuleFor(x => x.Amount).GreaterThan(0);
+        RuleFor(x => x.GiftCardId)
+            .NotNull().When(x => x.Method == "GIFT_CARD")
+            .WithMessage("Un pago con tarjeta regalo requiere la tarjeta.");
+        RuleFor(x => x.GiftCardId)
+            .Null().When(x => x.Method != "GIFT_CARD")
+            .WithMessage("Solo un pago GIFT_CARD indica tarjeta regalo.");
+    }
+}
+
+public sealed class RegisterPaymentHandler(
+    IOrderRepository orders,
+    IGiftCardRepository giftCards,
+    IUnitOfWork unitOfWork,
+    BranchAccessGuard access,
+    IClock clock,
+    IValidator<RegisterPaymentCommand> validator)
+{
+    public async Task<int> HandleAsync(RegisterPaymentCommand command, CancellationToken ct = default)
+    {
+        await validator.ValidateAndThrowAsync(command, ct);
+
+        var order = await orders.GetAsync(command.OrderId, ct)
+            ?? throw new NotFoundException("pedido", command.OrderId);
+        access.EnsureCanOperate(order.BranchId);
+
+        var method = PaymentMethodExtensions.FromDbValue(command.Method);
+        var now = clock.UtcNow;
+
+        if (method == PaymentMethod.GiftCard)
+        {
+            var card = await giftCards.GetAsync(command.GiftCardId!.Value, ct)
+                ?? throw new NotFoundException("tarjeta regalo", command.GiftCardId!.Value);
+
+            Payment payment = null!;
+            await unitOfWork.ExecuteInTransactionAsync(_ =>
+            {
+                payment = order.RegisterPayment(method, command.Amount, now);
+                giftCards.AddTransaction(card.Redeem(order.Id, command.Amount, now));
+                return Task.CompletedTask;
+            }, ct);
+            return payment.Id;
+        }
+
+        var registered = order.RegisterPayment(method, command.Amount, now);
+        await unitOfWork.SaveChangesAsync(ct);
+        return registered.Id;
+    }
+}
+
+// ─────────────────────────── Cierre y cancelación (Fase 6b) ───────────────────────────
+
+public sealed class CloseOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, BranchAccessGuard access)
+{
+    public async Task HandleAsync(int orderId, CancellationToken ct = default)
+    {
+        var order = await orders.GetAsync(orderId, ct) ?? throw new NotFoundException("pedido", orderId);
+        access.EnsureCanOperate(order.BranchId);
+
+        order.CloseOrder();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
+public sealed class CancelOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, BranchAccessGuard access)
+{
+    public async Task HandleAsync(int orderId, CancellationToken ct = default)
+    {
+        var order = await orders.GetAsync(orderId, ct) ?? throw new NotFoundException("pedido", orderId);
+        access.EnsureCanOperate(order.BranchId);
+
+        // Fase 6c: si el pedido estaba PAID, revertir el consumo de stock aquí (misma tx).
+        order.CancelOrder();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
 }

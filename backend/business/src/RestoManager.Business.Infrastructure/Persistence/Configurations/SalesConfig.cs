@@ -22,6 +22,12 @@ internal sealed class OrderConfig : IEntityTypeConfiguration<Order>
             .IsRequired();
         b.Property(x => x.TotalAmount).Money();
 
+        // Derivados: no se persisten.
+        b.Ignore(x => x.ItemsSubtotal);
+        b.Ignore(x => x.DiscountTotal);
+        b.Ignore(x => x.ConfirmedPaid);
+        b.Ignore(x => x.Balance);
+
         b.ToTable(t =>
         {
             t.HasCheckConstraint("ck_orders_channel", "channel IN ('MESA', 'BARRA', 'TAKEAWAY', 'DELIVERY')");
@@ -31,12 +37,25 @@ internal sealed class OrderConfig : IEntityTypeConfiguration<Order>
                 "(channel <> 'MESA' AND table_id IS NULL AND table_session_id IS NULL)");
         });
 
-        // FK NO ACTION en BD (como el DDL); EF borra los ítems huérfanos al removerlos del agregado.
+        // Colecciones hijas del agregado. FK NO ACTION en BD (como el DDL); EF borra
+        // los huérfanos al removerlos del agregado (patrón Fase 4).
         b.HasMany(x => x.Items)
             .WithOne()
             .HasForeignKey(i => i.OrderId)
             .OnDelete(DeleteBehavior.ClientCascade);
         b.Navigation(x => x.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        b.HasMany(x => x.Discounts)
+            .WithOne()
+            .HasForeignKey(d => d.OrderId)
+            .OnDelete(DeleteBehavior.ClientCascade);
+        b.Navigation(x => x.Discounts).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        b.HasMany(x => x.Payments)
+            .WithOne()
+            .HasForeignKey(p => p.OrderId)
+            .OnDelete(DeleteBehavior.ClientCascade);
+        b.Navigation(x => x.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         b.Fk<Order, Branch>(nameof(Order.BranchId));
         b.Fk<Order, Employee>(nameof(Order.EmployeeId));
@@ -61,10 +80,15 @@ internal sealed class PaymentConfig : IEntityTypeConfiguration<Payment>
 {
     public void Configure(EntityTypeBuilder<Payment> b)
     {
-        b.Property(x => x.PaymentMethod).HasMaxLength(50).IsRequired();
-        b.Property(x => x.Status).HasMaxLength(50).IsRequired();
+        b.Property(x => x.PaymentMethod)
+            .HasConversion(v => v.ToDbValue(), v => PaymentMethodExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
+        b.Property(x => x.Status)
+            .HasConversion(v => v.ToDbValue(), v => PaymentStatusExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Property(x => x.Amount).Money();
-        b.Fk<Payment, Order>(nameof(Payment.OrderId));
     }
 }
 
@@ -73,7 +97,10 @@ internal sealed class DiscountConfig : IEntityTypeConfiguration<Discount>
     public void Configure(EntityTypeBuilder<Discount> b)
     {
         b.Property(x => x.Name).HasMaxLength(100).IsRequired();
-        b.Property(x => x.Type).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Type)
+            .HasConversion(v => v.ToDbValue(), v => DiscountTypeExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Property(x => x.Value).Money();
     }
 }
@@ -84,7 +111,6 @@ internal sealed class OrderDiscountConfig : IEntityTypeConfiguration<OrderDiscou
     {
         b.Property(x => x.AppliedAmount).Money();
         b.HasIndex(x => new { x.OrderId, x.DiscountId }).IsUnique();
-        b.Fk<OrderDiscount, Order>(nameof(OrderDiscount.OrderId));
         b.Fk<OrderDiscount, Discount>(nameof(OrderDiscount.DiscountId));
     }
 }

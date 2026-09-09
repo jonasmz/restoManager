@@ -5,6 +5,7 @@ using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
+using RestoManager.Business.Domain.Sales;
 using RestoManager.Business.Domain.Tax;
 using RestoManager.Business.Infrastructure.Persistence;
 
@@ -23,6 +24,7 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
     {
         await SeedOrganizationAsync(cancellationToken);
         await SeedDiningRoomAsync(cancellationToken);
+        await SeedSalesAsync(cancellationToken);
     }
 
     private async Task SeedOrganizationAsync(CancellationToken cancellationToken)
@@ -138,5 +140,37 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
 
         await db.SaveChangesAsync(cancellationToken);
         logger.LogWarning("Semilla de salón creada: {N} mesas ({B} sucursales).", branches.Count * 6, branches.Count);
+    }
+
+    /// <summary>Fase 6b: un descuento del catálogo y una tarjeta regalo con saldo para probar pagos.</summary>
+    private async Task SeedSalesAsync(CancellationToken cancellationToken)
+    {
+        if (!await db.Discounts.AnyAsync(cancellationToken))
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            db.Discounts.Add(new Discount(
+                "Happy Hour 10%", DiscountType.Percentage, 10m, today.AddYears(-1), today.AddYears(1)));
+            db.Discounts.Add(new Discount(
+                "Bono $5", DiscountType.FixedAmount, 5m, today.AddYears(-1), today.AddYears(1)));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (!await db.GiftCards.AnyAsync(cancellationToken))
+        {
+            var customerId = await db.Customers.OrderBy(c => c.Id).Select(c => c.Id).FirstOrDefaultAsync(cancellationToken);
+            if (customerId > 0)
+            {
+                var card = new GiftCard
+                {
+                    CustomerId = customerId,
+                    CardNumber = "GC-DEMO-0001",
+                    ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(2),
+                };
+                db.GiftCards.Add(card);
+                // Balance tiene setter privado (se recarga en Fase 8); para la semilla se fija por EF.
+                db.Entry(card).Property(nameof(GiftCard.Balance)).CurrentValue = 100m;
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
     }
 }

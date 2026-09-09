@@ -89,19 +89,20 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 
 ## Criterios de aceptación
 
-- [ ] Todo pedido se crea con `channel` explícito (§15).
-- [ ] `channel ≠ MESA` ⇒ `table_id` y `table_session_id` siempre nulos (§15, ORD-06);
+- [x] Todo pedido se crea con `channel` explícito (§15). *(6a)*
+- [x] `channel ≠ MESA` ⇒ `table_id` y `table_session_id` siempre nulos (§15, ORD-06);
       `channel = MESA` ⇒ `table_id` obligatorio y, si hay sesión, coherente
-      (DOM-02/ORD-03).
-- [ ] `branch_id` del pedido coincide con la mesa y con el empleado (DOM-01/ORD-04).
-- [ ] `total_amount` = ítems + impuestos − descuentos, con el redondeo acordado;
-      recalculado ante cada cambio.
-- [ ] Varios `payments` por pedido y varias `orders` por `table_session` (split,
-      §5.2).
+      (DOM-02/ORD-03). *(6a)*
+- [x] `branch_id` del pedido coincide con la mesa y con el empleado (DOM-01/ORD-04). *(6a)*
+- [x] `total_amount` = ítems + impuestos − descuentos, con el redondeo acordado;
+      recalculado ante cada cambio. *(6a/6b)*
+- [x] Varios `payments` por pedido y varias `orders` por `table_session` (split,
+      §5.2). *(6b)*
 - [ ] El descuento de stock ocurre **una sola vez** por pedido (DOM-07); cancelar un
-      pedido ya contabilizado genera reversa (§7.5).
-- [ ] Ningún camino valida cupo/capacidad de barra (BAR-03, DOM-09, §15).
-- [ ] `orders.status` de "venta efectiva" definido y usado por las consultas (MET-01).
+      pedido ya contabilizado genera reversa (§7.5). *(6c)*
+- [x] Ningún camino valida cupo/capacidad de barra (BAR-03, DOM-09, §15).
+- [~] `orders.status` de "venta efectiva" definido y usado por las consultas (MET-01).
+      Definido (`PAID`/`CLOSED`) y filtrable en `GET /orders`; las métricas lo consumen en Fase 9.
 
 ## Pruebas
 
@@ -116,7 +117,7 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 
 1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total. **Hecha (PR #16).**
 2. `feat/fase-06b-descuentos-pagos` — descuentos, pagos múltiples, gift card como
-   medio de pago.
+   medio de pago. **Hecha (PR #17).**
 3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa.
 4. `feat/fase-06d-pos-frontend` — POS, cuenta, cobro, historial.
 
@@ -142,5 +143,33 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
   (sesión→pedido→ítems→total 35.50→update 28.50→remove), BARRA/TAKEAWAY/DELIVERY,
   coherencias (MESA sin mesa 409, no-MESA con mesa/sesión 422, sesión de otra mesa
   409, empleado de otra sucursal 409), filtros de listado.
-- Pendiente 6b: pagos (`OrderStatus.Paid` al 1er pago `CONFIRMED`), descuentos,
-  `CloseOrder`/`CancelOrder`.
+### Estado 6b (descuentos, pagos, cierre)
+
+- Enums nuevos en `SalesEntities.cs`: `PaymentMethod`, `PaymentStatus`, `DiscountType`
+  (todos con `ToDbValue`/`FromDbValue`). `Discount` pasa a entidad rica (invariantes de
+  valor/porcentaje/rango, `IsActiveOn`, `ComputeApplied`). `Payment` y `OrderDiscount`
+  ricos. `GiftCard.Redeem(orderId, amount, now)` descuenta saldo y devuelve el asiento.
+- Agregado `Order` amplía: colecciones `Discounts` + `Payments`; derivados
+  `ItemsSubtotal`/`DiscountTotal`/`ConfirmedPaid`/`Balance` (no se persisten).
+  `ApplyDiscount` (vigencia, `UNIQUE(order_id,discount_id)`, tope para total ≥ 0),
+  `RemoveDiscount`, `RegisterPayment` (Σ pagos ≤ total §5.2; el 1.º `CONFIRMED` pasa a
+  `PAID`), `CloseOrder` (exige pago completo o total 0), `CancelOrder` (`OPEN`/`PAID` →
+  `CANCELLED`, pagos `CONFIRMED` → `REFUNDED`).
+- Casos de uso (`OrderUseCases.cs` + `DiscountUseCases.cs`): `ApplyOrderDiscount`,
+  `RemoveOrderDiscount`, `RegisterPayment` (pago `GIFT_CARD` = pago + canje + asiento
+  en 1 tx), `CloseOrder`, `CancelOrder`; catálogo `SaveDiscount`/`ListDiscounts`/
+  `GetDiscount`. `OrderDto` amplía con subtotal/descuentos/pagos/saldo.
+- Endpoints: `POST /orders/{id}/discounts`, `DELETE /orders/{id}/discounts/{discountId}`,
+  `POST /orders/{id}/payments`, `POST /orders/{id}/close`, `POST /orders/{id}/cancel`;
+  `/api/v1/discounts` (GET/POST/PUT) con policy `DiscountAccess` (ADMIN, BRANCH_MANAGER).
+- **Sin migración**: enums → strings/longitudes del DDL; colecciones hijas
+  `ClientCascade`; derivados ignorados. `migrations add` en seco → `Up()` vacío.
+- Seeder: 2 descuentos demo (Happy Hour 10 %, Bono $5) + tarjeta regalo `GC-DEMO-0001`
+  con saldo 100 (idempotente).
+- 19 tests unit nuevos (88 total). Verificado e2e vs compose: descuentos (suma, tope a
+  0, duplicado 409, vencido 409, quitar), pagos (split, `PAID` al 1.º, exceso 409),
+  gift card (canje descuenta saldo + asiento −monto, saldo insuficiente 409, sin id
+  422), cierre (subpagado 409 → completo 204), cancelación (pagos → `REFUNDED`, editar
+  cancelado 409, idempotente).
+- Pendiente 6c: `PostSaleConsumption` en la transición `OPEN → PAID` (idempotente por
+  `reference_type='ORDER'`) y su reversa al cancelar un pedido ya `PAID`.

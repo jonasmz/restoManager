@@ -6,7 +6,7 @@ namespace RestoManager.Business.Infrastructure.Persistence.Repositories;
 public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
 {
     public Task<Order?> GetAsync(int id, CancellationToken ct = default)
-        => db.Orders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == id, ct);
+        => WithChildren(db.Orders).FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public async Task<IReadOnlyList<Order>> ListAsync(
         int branchId,
@@ -18,8 +18,7 @@ public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
         int skip,
         int take,
         CancellationToken ct = default)
-        => await Filter(branchId, channel, status, tableSessionId, fromInclusive, toExclusive)
-            .Include(x => x.Items)
+        => await WithChildren(Filter(branchId, channel, status, tableSessionId, fromInclusive, toExclusive))
             .OrderByDescending(x => x.Id)
             .Skip(skip).Take(take)
             .ToListAsync(ct);
@@ -35,6 +34,9 @@ public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
         => Filter(branchId, channel, status, tableSessionId, fromInclusive, toExclusive).CountAsync(ct);
 
     public void Add(Order order) => db.Orders.Add(order);
+
+    private static IQueryable<Order> WithChildren(IQueryable<Order> q) =>
+        q.Include(x => x.Items).Include(x => x.Discounts).Include(x => x.Payments);
 
     private IQueryable<Order> Filter(
         int branchId,
@@ -66,5 +68,31 @@ public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
             q = q.Where(x => x.OrderTime < to);
         }
         return q;
+    }
+}
+
+public sealed class DiscountRepository(BusinessDbContext db) : IDiscountRepository
+{
+    public Task<Discount?> GetAsync(int id, CancellationToken ct = default)
+        => db.Discounts.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
+        => db.Discounts.AnyAsync(x => x.Id == id, ct);
+
+    public async Task<IReadOnlyList<Discount>> ListAsync(
+        string? search, int skip, int take, CancellationToken ct = default)
+        => await Filter(search).OrderBy(x => x.Name).Skip(skip).Take(take).ToListAsync(ct);
+
+    public Task<int> CountAsync(string? search, CancellationToken ct = default)
+        => Filter(search).CountAsync(ct);
+
+    public void Add(Discount discount) => db.Discounts.Add(discount);
+
+    private IQueryable<Discount> Filter(string? search)
+    {
+        var q = db.Discounts.AsQueryable();
+        return string.IsNullOrWhiteSpace(search)
+            ? q
+            : q.Where(x => EF.Functions.ILike(x.Name, $"%{search.Trim()}%"));
     }
 }

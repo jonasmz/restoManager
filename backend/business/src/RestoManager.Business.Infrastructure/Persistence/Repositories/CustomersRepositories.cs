@@ -35,3 +35,11 @@ public sealed class CustomerRepository(BusinessDbContext db) : ICustomerReposito
             || EF.Functions.ILike(x.Phone, term));
     }
 }
+
+public sealed class GiftCardRepository(BusinessDbContext db) : IGiftCardRepository
+{
+    public Task<GiftCard?> GetAsync(int id, CancellationToken ct = default)
+        => db.GiftCards.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public void AddTransaction(GiftCardTransaction transaction) => db.GiftCardTransactions.Add(transaction);
+}
