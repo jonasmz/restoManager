@@ -18,15 +18,26 @@ Trazabilidad de materia prima por sucursal:
 
 Fase 2 (sucursales, empleados, `DOM-06`).
 
-### Decisiones bloqueantes
+### Decisiones (resueltas 2026-09-09)
 
-1. ¿Se admite **recepción parcial** de una orden de compra? (afecta
-   `purchase_orders.status` y cuántos movimientos `PURCHASE` genera).
-2. Definición operativa de **"`waste_log` confirmado"** (INV-08): ¿se crea ya
-   confirmado o hay un paso de aprobación?
-3. **Carga inicial de inventario** (excepción documentada de INV-04): ¿movimiento
-   `ADJUSTMENT` de apertura o carga directa marcada?
-4. Catálogo `purchase_orders.status` (borrador en transversal §2).
+1. **Solo recepción total.** Recibir una OC postea `PURCHASE` por la `quantity`
+   completa de cada ítem y pasa la OC a `RECEIVED`. Sin `received_quantity` ni
+   recepciones parciales (el esquema no lo soporta).
+2. **`waste_log` se confirma al crearse.** El log y el movimiento `WASTE` se
+   escriben en la misma transacción; sin paso de aprobación.
+3. **Carga inicial = movimiento `ADJUSTMENT`** con `reference_type='INITIAL_LOAD'`
+   (mantiene el ledger completo). Se rechaza si ya hay saldo > 0.
+4. **`purchase_orders.status` aprobado**: `DRAFT` → `SENT` → (`PARTIALLY_RECEIVED`) →
+   `RECEIVED`; `* → CANCELLED`.
+
+### Estado
+
+**✅ Backend implementado (PR #7).** Incluye la **migración baseline `InitialSchema`**
+(las 35 tablas de `restaurant_schema.sql`, entregable de la Fase 2a) y todo el
+dominio/aplicación/API de inventario y compras. Verificado de extremo a extremo
+contra el compose (carga inicial, recepción de OC, merma, movimientos §12.3,
+saldo no negativo, idempotencia, policy `InventoryAccess`). Falta `fase-03c`
+(frontend).
 
 ## Backend
 
