@@ -21,13 +21,24 @@ esquema exige `customer_id NOT NULL` en `reservations`—; si Fase 5 va antes qu
 se usa un mínimo alta-rápida de cliente o se difiere la parte de reservas a un PR
 posterior a Fase 8.
 
-### Decisiones bloqueantes
+### Decisiones bloqueantes — RESUELTAS (2026-09-09)
 
-1. **Duración de la ventana de reserva** (TBL-02): cuántos minutos antes/después de
-   `reservation_time` una reserva `CONFIRMED` pone la mesa en `RESERVED`.
-2. Catálogo `reservations.status` (borrador en transversal §2).
-3. ¿Reservas solaparían con una sesión abierta? Regla de conflicto al aceptar una
-   reserva.
+1. **Ventana de reserva (TBL-02): 30 min antes / 30 min después** de
+   `reservation_time`. Configurable en `Salon:ReservationWindow`
+   (`BeforeMinutes`/`AfterMinutes`). Fuera de la ventana la mesa vuelve a
+   `AVAILABLE` aunque la reserva siga `CONFIRMED` hasta que se marque `NO_SHOW`.
+2. **Catálogo `reservations.status`** confirmado según transversal §2:
+   `PENDING → CONFIRMED → SEATED`; `PENDING/CONFIRMED → CANCELLED`;
+   `CONFIRMED → NO_SHOW`. `RESERVED` es derivado (solo `CONFIRMED` en ventana).
+3. **Regla de conflicto**: al crear una reserva se rechaza (`409
+   dining.reservation_overlap`) si ya hay otra reserva activa
+   (`PENDING`/`CONFIRMED`/`SEATED`) para la misma mesa cuyo horario cae dentro de
+   ±(antes+después) del nuevo `reservation_time`. Una sesión abierta **no** impide
+   crear una reserva futura; `SeatReservation` sí exige mesa `ACTIVE` sin sesión
+   abierta.
+4. **Clientes**: `reservations.customer_id` es `NOT NULL` y la Fase 8 aún no está;
+   Fase 5 añade un **alta rápida de cliente** (`POST /api/v1/customers`, nombre +
+   apellido + teléfono + email opcional). La Fase 8 se hace dueña del módulo.
 
 ## Backend
 

@@ -1,16 +1,40 @@
+using RestoManager.Business.Domain.Common;
+
 namespace RestoManager.Business.Domain.Customers;
 
-// Módulo Cliente. Solo esquema en la Fase 3. La Fase 8 añade fidelización, gift
-// cards y reseñas. gift_card_transactions se materializa en la Fase 6 (pago).
+// Módulo Cliente. La Fase 5 añade un alta rápida mínima (nombre + contacto) para
+// poder crear reservas antes de la Fase 8. La Fase 8 añade fidelización, gift cards
+// y reseñas. gift_card_transactions se materializa en la Fase 6 (pago).
 
 public sealed class Customer
 {
-    public int Id { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public int LoyaltyPoints { get; set; }
+    public int Id { get; private set; }
+    public string FirstName { get; private set; } = string.Empty;
+    public string LastName { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public string Phone { get; private set; } = string.Empty;
+    public int LoyaltyPoints { get; private set; }
+
+    private Customer() { }
+
+    public Customer(string firstName, string lastName, string phone, string email)
+    {
+        LoyaltyPoints = 0;
+        Update(firstName, lastName, phone, email);
+    }
+
+    public void Update(string firstName, string lastName, string phone, string email)
+    {
+        FirstName = Required(firstName, "nombre");
+        LastName = Required(lastName, "apellido");
+        Phone = Required(phone, "teléfono");
+        Email = email?.Trim() ?? string.Empty;
+    }
+
+    private static string Required(string value, string field) =>
+        string.IsNullOrWhiteSpace(value)
+            ? throw new DomainRuleException("customers.missing_field", $"El {field} del cliente es obligatorio.")
+            : value.Trim();
 }
 
 public sealed class Review
@@ -39,4 +63,13 @@ public sealed class GiftCardTransaction
     public int OrderId { get; set; }
     public decimal Amount { get; set; }
     public DateTime TransactionTime { get; set; }
+}
+
+public interface ICustomerRepository
+{
+    Task<Customer?> GetAsync(int id, CancellationToken ct = default);
+    Task<bool> ExistsAsync(int id, CancellationToken ct = default);
+    Task<IReadOnlyList<Customer>> ListAsync(string? search, int skip, int take, CancellationToken ct = default);
+    Task<int> CountAsync(string? search, CancellationToken ct = default);
+    void Add(Customer customer);
 }

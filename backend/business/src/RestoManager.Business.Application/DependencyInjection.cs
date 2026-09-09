@@ -1,6 +1,11 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Application.Common;
+using RestoManager.Business.Application.Customers;
+using RestoManager.Business.Application.DiningRoom.Floor;
+using RestoManager.Business.Application.DiningRoom.Reservations;
+using RestoManager.Business.Application.DiningRoom.Sessions;
+using RestoManager.Business.Application.DiningRoom.Tables;
 using RestoManager.Business.Application.Inventory.Adjustments;
 using RestoManager.Business.Application.Inventory.Ingredients;
 using RestoManager.Business.Application.Inventory.Ledger;
@@ -51,6 +56,27 @@ public static class DependencyInjection
         services.AddScoped<CancelPurchaseOrderHandler>();
         services.AddScoped<ListPurchaseOrdersHandler>();
         services.AddScoped<GetPurchaseOrderHandler>();
+
+        // Salón (Fase 5)
+        services.AddScoped<SaveTableHandler>();
+        services.AddScoped<SetTableStatusHandler>();
+        services.AddScoped<ListTablesHandler>();
+        services.AddScoped<GetTableHandler>();
+        services.AddScoped<OpenSessionHandler>();
+        services.AddScoped<CloseSessionHandler>();
+        services.AddScoped<GetFloorHandler>();
+        services.AddScoped<CreateReservationHandler>();
+        services.AddScoped<ConfirmReservationHandler>();
+        services.AddScoped<CancelReservationHandler>();
+        services.AddScoped<MarkNoShowHandler>();
+        services.AddScoped<SeatReservationHandler>();
+        services.AddScoped<ListReservationsHandler>();
+        services.AddScoped<GetReservationHandler>();
+
+        // Clientes (alta rápida — Fase 8 se hace dueña)
+        services.AddScoped<SaveCustomerHandler>();
+        services.AddScoped<ListCustomersHandler>();
+        services.AddScoped<GetCustomerHandler>();
 
         // Organización
         services.AddScoped<SaveRestaurantHandler>();

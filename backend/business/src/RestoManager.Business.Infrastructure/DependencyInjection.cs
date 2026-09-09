@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Domain.Abstractions;
+using RestoManager.Business.Domain.Customers;
+using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
@@ -28,12 +30,23 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<BusinessDevSeeder>();
 
+        // TBL-02: ventana que convierte una reserva CONFIRMED en RESERVED (configurable).
+        var windowSection = configuration.GetSection("Salon:ReservationWindow");
+        services.AddSingleton(ReservationWindow.FromMinutes(
+            int.TryParse(windowSection["BeforeMinutes"], out var before) ? before : 30,
+            int.TryParse(windowSection["AfterMinutes"], out var after) ? after : 30));
+
         services.AddScoped<IIngredientRepository, IngredientRepository>();
         services.AddScoped<IBranchInventoryRepository, BranchInventoryRepository>();
         services.AddScoped<IInventoryMovementRepository, InventoryMovementRepository>();
         services.AddScoped<IWasteLogRepository, WasteLogRepository>();
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+
+        services.AddScoped<ITableRepository, TableRepository>();
+        services.AddScoped<ITableSessionRepository, TableSessionRepository>();
+        services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
 
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IBranchRepository, BranchRepository>();
