@@ -5,6 +5,7 @@ import { roleGuard } from './core/auth/role.guard';
 
 const orgRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 const invRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'INVENTORY');
+const menuRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 
 /**
  * El shell (Layout) queda tras `authGuard`. Las páginas de módulos se añaden por
@@ -50,6 +51,36 @@ export const routes: Routes = [
         canActivate: [invRoles],
         loadComponent: () => import('./features/purchasing/purchase-orders-page').then((m) => m.PurchaseOrdersPage),
         title: 'Órdenes de compra',
+      },
+      {
+        path: 'menu/categories',
+        canActivate: [menuRoles],
+        loadComponent: () => import('./features/menu/categories-page').then((m) => m.CategoriesPage),
+        title: 'Categorías',
+      },
+      {
+        path: 'menu/items',
+        canActivate: [menuRoles],
+        loadComponent: () => import('./features/menu/menu-items-page').then((m) => m.MenuItemsPage),
+        title: 'Platos',
+      },
+      {
+        path: 'menu/items/:id',
+        canActivate: [menuRoles],
+        loadComponent: () => import('./features/menu/menu-item-detail-page').then((m) => m.MenuItemDetailPage),
+        title: 'Plato',
+      },
+      {
+        path: 'kitchen/stations',
+        canActivate: [menuRoles],
+        loadComponent: () => import('./features/kitchen/stations-page').then((m) => m.StationsPage),
+        title: 'Estaciones de cocina',
+      },
+      {
+        path: 'fiscal/tax-rates',
+        canActivate: [menuRoles],
+        loadComponent: () => import('./features/fiscal/tax-rates-page').then((m) => m.TaxRatesPage),
+        title: 'Tasas de impuesto',
       },
       {
         path: 'reports',
