@@ -10,7 +10,10 @@ internal sealed class TableConfig : IEntityTypeConfiguration<Table>
 {
     public void Configure(EntityTypeBuilder<Table> b)
     {
-        b.Property(x => x.OperationalStatus).HasMaxLength(20).IsRequired();
+        b.Property(x => x.OperationalStatus)
+            .HasConversion(v => v.ToDbValue(), v => TableOperationalStatusExtensions.FromDbValue(v))
+            .HasMaxLength(20)
+            .IsRequired();
         b.HasIndex(x => new { x.BranchId, x.Number }).IsUnique();
         b.ToTable(t => t.HasCheckConstraint(
             "ck_tables_operational_status",
@@ -40,7 +43,10 @@ internal sealed class ReservationConfig : IEntityTypeConfiguration<Reservation>
 {
     public void Configure(EntityTypeBuilder<Reservation> b)
     {
-        b.Property(x => x.Status).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Status)
+            .HasConversion(v => v.ToDbValue(), v => ReservationStatusExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Fk<Reservation, Customer>(nameof(Reservation.CustomerId));
         b.Fk<Reservation, Branch>(nameof(Reservation.BranchId));
         b.Fk<Reservation, Table>(nameof(Reservation.TableId));

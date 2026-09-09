@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RestoManager.Business.Domain.Customers;
+using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
@@ -11,12 +13,19 @@ namespace RestoManager.Business.Infrastructure.Setup;
 /// <summary>
 /// Semilla de desarrollo: 1 empresa, 2 sucursales, departamentos, roles/puestos y
 /// empleados demo. El empleado id=1 (sucursal 1) corresponde al claim
-/// <c>employee_id</c> del admin de arranque de la Auth API. Idempotente.
-/// La reemplazará el seed real de la Fase 2 cuando se defina.
+/// <c>employee_id</c> del admin de arranque de la Auth API. Cada bloque es
+/// idempotente y corre también sobre una BD ya sembrada.
+/// La reemplazará el seed real parametrizable cuando se defina.
 /// </summary>
 public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevSeeder> logger)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
+    {
+        await SeedOrganizationAsync(cancellationToken);
+        await SeedDiningRoomAsync(cancellationToken);
+    }
+
+    private async Task SeedOrganizationAsync(CancellationToken cancellationToken)
     {
         if (await db.Branches.AnyAsync(cancellationToken))
         {
@@ -100,5 +109,34 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
             db.KitchenStations.Add(cocinaCaliente);
             await db.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    /// <summary>Fase 5: mesas por sucursal + un cliente demo para probar reservas.</summary>
+    private async Task SeedDiningRoomAsync(CancellationToken cancellationToken)
+    {
+        if (!await db.Customers.AnyAsync(cancellationToken))
+        {
+            db.Customers.Add(new Customer("Cliente", "Demo", "555-2000", "cliente@demo.local"));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (await db.Tables.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var branches = await db.Branches.OrderBy(b => b.Id).Select(b => b.Id).ToListAsync(cancellationToken);
+        foreach (var branchId in branches)
+        {
+            // 6 mesas de capacidades variadas por sucursal.
+            int[] capacities = [2, 2, 4, 4, 6, 8];
+            for (var i = 0; i < capacities.Length; i++)
+            {
+                db.Tables.Add(new Table(branchId, i + 1, capacities[i]));
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        logger.LogWarning("Semilla de salón creada: {N} mesas ({B} sucursales).", branches.Count * 6, branches.Count);
     }
 }

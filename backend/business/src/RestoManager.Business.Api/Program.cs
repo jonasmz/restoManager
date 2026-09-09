@@ -44,7 +44,8 @@ if (authEnabled)
         .AddPolicy("InventoryAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "INVENTORY"))
         .AddPolicy("OrgAdmin", policy => policy.RequireRole("ADMIN"))
         .AddPolicy("OrgStaff", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"))
-        .AddPolicy("MenuAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"));
+        .AddPolicy("MenuAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"))
+        .AddPolicy("DiningRoomAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "WAITER"));
 }
 
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
@@ -80,6 +81,8 @@ if (authEnabled)
     app.MapInventoryEndpoints();
     app.MapPurchasingEndpoints();
     app.MapMenuEndpoints();
+    app.MapDiningRoomEndpoints();
+    app.MapCustomerEndpoints();
 }
 
 await using (var scope = app.Services.CreateAsyncScope())
