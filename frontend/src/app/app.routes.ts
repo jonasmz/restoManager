@@ -6,6 +6,7 @@ import { roleGuard } from './core/auth/role.guard';
 const orgRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 const invRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'INVENTORY');
 const menuRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
+const salonRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
 
 /**
  * El shell (Layout) queda tras `authGuard`. Las páginas de módulos se añaden por
@@ -81,6 +82,24 @@ export const routes: Routes = [
         canActivate: [menuRoles],
         loadComponent: () => import('./features/fiscal/tax-rates-page').then((m) => m.TaxRatesPage),
         title: 'Tasas de impuesto',
+      },
+      {
+        path: 'salon/floor',
+        canActivate: [salonRoles],
+        loadComponent: () => import('./features/salon/floor-page').then((m) => m.FloorPage),
+        title: 'Tablero de salón',
+      },
+      {
+        path: 'salon/tables',
+        canActivate: [salonRoles],
+        loadComponent: () => import('./features/salon/tables-page').then((m) => m.TablesPage),
+        title: 'Mesas',
+      },
+      {
+        path: 'salon/reservations',
+        canActivate: [salonRoles],
+        loadComponent: () => import('./features/salon/reservations-page').then((m) => m.ReservationsPage),
+        title: 'Reservas',
       },
       {
         path: 'reports',
