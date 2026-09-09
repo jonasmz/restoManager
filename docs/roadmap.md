@@ -28,7 +28,7 @@ ejecutarla sin ambigüedad.
 
 | Fase | Objetivo | Entidades del esquema | Spec | Dependencias | Estado |
 |---|---|---|---|---|---|
-| [0 — Andamiaje](roadmap/fase-00-andamiaje.md) | Infra Docker + soluciones .NET hexagonales vacías + shell Angular del template | — | — | — | Pendiente |
+| [0 — Andamiaje](roadmap/fase-00-andamiaje.md) | Infra Docker + soluciones .NET hexagonales vacías + shell Angular del template | — | — | — | En curso (PR #2) |
 | [1 — Auth y usuarios](roadmap/fase-01-auth.md) | Auth API (Identity, JWT asimétrico, JWKS) + validación en Business API + login en el frontend | *(ASP.NET Identity, base `resto_identity`)* | [`auth.md`](auth.md) | 0 | Pendiente |
 | [2 — Organización](roadmap/fase-02-organizacion.md) | Empresa, sucursales y personal; **branch scoping** transversal; selector de sucursal; datos semilla | `restaurants`, `branches`, `departments`, `roles`, `employees`, `shifts`, `employee_leaves` | §2, DOM-06 | 1 | Pendiente |
 | [3 — Inventario y compras](roadmap/fase-03-inventario-compras.md) | Saldo por sucursal + ledger firmado atómico; proveedores y recepción de compra; mermas | `ingredients`, `branch_inventory`, `inventory_movements`, `waste_logs`, `suppliers`, `purchase_orders`, `purchase_order_items` | §7, §11.4, §11.6, INV-01…08, DOM-05/07 | 2 | Pendiente |
