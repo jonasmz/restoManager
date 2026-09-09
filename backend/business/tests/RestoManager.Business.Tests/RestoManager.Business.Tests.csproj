@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RestoManager.Business.Domain\RestoManager.Business.Domain.csproj" />
     <ProjectReference Include="..\..\src\RestoManager.Business.Application\RestoManager.Business.Application.csproj" />
+    <ProjectReference Include="..\..\src\RestoManager.Business.Api\RestoManager.Business.Api.csproj" />
   </ItemGroup>
 
 </Project>
