@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RestoManager.Business.Domain.Delivery;
-using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
 using RestoManager.Business.Domain.Sales;
 using RestoManager.Business.Domain.Tax;
@@ -42,8 +41,8 @@ internal sealed class MenuItemTaxConfig : IEntityTypeConfiguration<MenuItemTax>
 {
     public void Configure(EntityTypeBuilder<MenuItemTax> b)
     {
+        // La relación con MenuItem la declara MenuItemConfig (agregado).
         b.HasIndex(x => new { x.MenuItemId, x.TaxRateId }).IsUnique();
-        b.Fk<MenuItemTax, MenuItem>(nameof(MenuItemTax.MenuItemId));
         b.Fk<MenuItemTax, TaxRate>(nameof(MenuItemTax.TaxRateId));
     }
 }

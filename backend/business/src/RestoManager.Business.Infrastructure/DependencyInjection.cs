@@ -3,8 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Inventory;
+using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
 using RestoManager.Business.Domain.Purchasing;
+using RestoManager.Business.Domain.Tax;
 using RestoManager.Business.Infrastructure.Persistence;
 using RestoManager.Business.Infrastructure.Persistence.Repositories;
 using RestoManager.Business.Infrastructure.Setup;
@@ -40,6 +42,12 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<IEmployeeLeaveRepository, EmployeeLeaveRepository>();
+
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IMenuItemRepository, MenuItemRepository>();
+        services.AddScoped<IKitchenStationRepository, KitchenStationRepository>();
+        services.AddScoped<IMenuItemAvailabilityRepository, MenuItemAvailabilityRepository>();
+        services.AddScoped<ITaxRateRepository, TaxRateRepository>();
 
         return services;
     }

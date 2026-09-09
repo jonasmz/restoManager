@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RestoManager.Business.Domain.Inventory;
+using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
+using RestoManager.Business.Domain.Tax;
 using RestoManager.Business.Infrastructure.Persistence;
 
 namespace RestoManager.Business.Infrastructure.Setup;
@@ -17,6 +20,8 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
     {
         if (await db.Branches.AnyAsync(cancellationToken))
         {
+            // Organización ya sembrada; asegura la carta demo (Fase 4) de forma idempotente.
+            await SeedMenuAsync(cancellationToken);
             return;
         }
 
@@ -51,8 +56,49 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         db.Employees.AddRange(admin, ana);
         await db.SaveChangesAsync(cancellationToken); // admin.Id = 1
 
+        await SeedMenuAsync(cancellationToken);
+
         logger.LogWarning(
             "Semilla de desarrollo de negocio creada: empresa 1, sucursales {C}/{N}, empleado admin id={A}.",
             centro.Id, norte.Id, admin.Id);
+    }
+
+    /// <summary>Carta demo: categorías, una tasa de IVA, ingredientes, un plato con receta e impuesto y una estación.</summary>
+    private async Task SeedMenuAsync(CancellationToken cancellationToken)
+    {
+        if (await db.Categories.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var branchId = await db.Branches.OrderBy(b => b.Id).Select(b => b.Id).FirstOrDefaultAsync(cancellationToken);
+
+        var entradas = new Category("Entradas", "Para empezar");
+        var principales = new Category("Platos principales", "Fuertes");
+        var bebidas = new Category("Bebidas", "Con y sin alcohol");
+        db.Categories.AddRange(entradas, principales, bebidas);
+
+        var iva = new TaxRate("IVA 21%", 21m);
+        db.TaxRates.Add(iva);
+
+        var harina = new Ingredient("Harina", "kg", 0.90m);
+        var tomate = new Ingredient("Tomate", "kg", 1.40m);
+        var mozzarella = new Ingredient("Mozzarella", "kg", 6.50m);
+        db.Ingredients.AddRange(harina, tomate, mozzarella);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var pizza = new MenuItem(principales.Id, "Pizza Margarita", "Salsa de tomate y mozzarella", 12.00m, true);
+        pizza.SetRecipe([(harina.Id, 0.25m), (tomate.Id, 0.15m), (mozzarella.Id, 0.20m)]);
+        pizza.SetTaxes([iva.Id]);
+        db.MenuItems.Add(pizza);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (branchId > 0)
+        {
+            var cocinaCaliente = new KitchenStation(branchId, "Cocina caliente", "Horno y planchas");
+            cocinaCaliente.SetMenuItems([pizza.Id]);
+            db.KitchenStations.Add(cocinaCaliente);
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 }
