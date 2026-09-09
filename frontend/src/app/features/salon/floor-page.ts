@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { interval } from 'rxjs';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
@@ -11,7 +12,7 @@ import { FloorTable, TableDisplayStatus } from './salon.models';
 
 @Component({
   selector: 'app-salon-floor',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-6">
@@ -65,7 +66,13 @@ import { FloorTable, TableDisplayStatus } from './salon.models';
 
           @if (t.openSessionId) {
             <p class="small text-secondary">Sesión abierta #{{ t.openSessionId }} desde {{ t.openedAt | date: 'short' }}.</p>
-            <button type="button" class="btn btn-success" (click)="closeSession(t)">Cerrar sesión</button>
+            <div class="d-flex gap-2">
+              <a class="btn btn-primary" [routerLink]="['/pos']"
+                [queryParams]="{ tableId: t.tableId, sessionId: t.openSessionId }">
+                <i class="ti ti-cash-register me-1"></i>Abrir cuenta
+              </a>
+              <button type="button" class="btn btn-outline-success" (click)="closeSession(t)">Cerrar sesión</button>
+            </div>
           } @else if (t.operationalStatus === 'ACTIVE') {
             <form [formGroup]="openForm" (ngSubmit)="openSession(t)" class="row g-2 align-items-end" style="max-width: 22rem">
               <div class="col-7"><label class="form-label small" for="gc">Comensales</label>

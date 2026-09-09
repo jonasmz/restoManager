@@ -119,7 +119,34 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 2. `feat/fase-06b-descuentos-pagos` — descuentos, pagos múltiples, gift card como
    medio de pago. **Hecha (PR #17).**
 3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa. **Hecha (PR #18).**
-4. `feat/fase-06d-pos-frontend` — POS, cuenta, cobro, historial.
+4. `feat/fase-06d-pos-frontend` — POS, cuenta, cobro, historial. **Hecha (PR #19).**
+
+### Estado 6d (POS frontend)
+
+- `frontend/src/app/features/sales/`: `SalesApiService` + `sales.models.ts`.
+  - **`pos`** (`PosPage`) — selector de canal (BARRA/TAKEAWAY/DELIVERY; MESA solo desde
+    el tablero) o contexto de mesa por query params `tableId`/`sessionId`/`customerId`;
+    «Abrir pedido» crea y navega. Lista los pedidos abiertos/`PAID` de hoy.
+  - **`pos/order/:id`** (`OrderPage`) — rejilla de la carta (categorías + platos,
+    reutiliza `MenuApiService`) para añadir ítems; panel de cuenta con stepper de
+    cantidad, nota y quitar por línea; descuentos (select del catálogo + aplicar/
+    quitar, importe congelado); totales (subtotal / descuentos / total / pagado /
+    saldo); pagos (lista + form con medio, importe, id de tarjeta regalo cuando
+    `GIFT_CARD`, atajo «cobrar el saldo»); botones Cerrar / Cancelar. Solo `OPEN`
+    permite editar ítems/descuentos.
+  - **`sales/orders`** (`OrdersPage`) — historial con filtros día/canal/estado.
+  - **`sales/discounts`** (`DiscountsPage`) — CRUD del catálogo (policy
+    `DiscountAccess`).
+- Rutas bajo `Layout` con `roleGuard`: POS/pedidos = `SalesAccess`
+  (ADMIN/BRANCH_MANAGER/WAITER), descuentos = ADMIN/BRANCH_MANAGER. Sidebar grupo
+  «Ventas». Desde el tablero de salón, «Abrir cuenta» en una mesa ocupada abre `/pos`
+  con `channel=MESA` + sesión.
+- `ng lint` + `ng build` limpios. Verificado en navegador (Claude in Chrome) contra
+  compose: login, cambio de sucursal, crear pedido BARRA, añadir 3 platos, stepper de
+  cantidad (×2), aplicar descuento 15 % (−8.03 sobre 53.50 → total 45.47), cobro en
+  efectivo → `PAID`, cerrar → `CLOSED`; historial y catálogo de descuentos; handoff
+  salón → POS con contexto de mesa.
+- Tras mergear #19: **Fase 6 COMPLETA**. Siguiente: Fase 7 (Delivery), dep 6.
 
 ### Estado 6a (backend de pedidos)
 
