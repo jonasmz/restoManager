@@ -33,7 +33,22 @@
     <i class="ti ti-layout-sidebar-left-expand"></i>
   </button>
 
-  <ul class="list-unstyled d-flex align-items-center mb-0 gap-1">
+  <ul class="list-unstyled d-flex align-items-center mb-0 gap-2">
+    @if (branch.ready()) {
+      <li class="d-flex align-items-center gap-2 me-2">
+        <i class="ti ti-map-pin text-secondary d-none d-sm-inline"></i>
+        <select
+          class="form-select form-select-sm"
+          style="width: auto"
+          aria-label="Sucursal activa"
+          (change)="onBranchChange($event)"
+        >
+          @for (b of branch.branches(); track b.id) {
+            <option [value]="b.id" [selected]="b.id === branch.activeId()">{{ b.name }}</option>
+          }
+        </select>
+      </li>
+    }
     <li class="dropdown">
       <a
         class="position-relative btn-icon btn-sm btn-light btn rounded-circle"

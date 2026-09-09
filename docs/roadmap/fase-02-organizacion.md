@@ -98,4 +98,15 @@ Pantallas de administración (patrón tabla + formulario del template):
    Verificado de extremo a extremo. `employee_leaves.status`/`leave_type` fijados
    (`VACATION`/`SICK`/`UNPAID`/`OTHER`).
 3. `feat/fase-02c-org-frontend` — selector de sucursal + pantallas de administración.
-   **Pendiente.**
+   **✅ Hecho (PR #9).** `BranchContextService` (señal `activeBranch`, persistida en
+   `localStorage`, lista de sucursales del usuario) + `branchHeaderInterceptor`
+   (añade `X-Branch-Id` a las llamadas a la Business API) + selector `<select>` en
+   el topbar (recarga al cambiar). Guard funcional `roleGuard(...roles)`. Grupo
+   "Organización" en el sidebar. Pantallas: Empresa (form), Sucursales/Puestos/
+   Departamentos (tabla + panel de alta/edición), Empleados (tabla + form con
+   selects de departamento/puesto), ficha de empleado con turnos (alta/baja) y
+   ausencias (solicitar + aprobar/rechazar/cancelar según estado). Verificado en
+   navegador de extremo a extremo (cambio de sucursal, CRUD, scoping, sin errores
+   de consola). `ng build`/`ng lint` en verde.
+
+## Estado: **Fase 2 completa** (2a + 2b + 2c).
