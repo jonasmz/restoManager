@@ -52,8 +52,33 @@ public sealed class GiftCard
     public int Id { get; set; }
     public int CustomerId { get; set; }
     public string CardNumber { get; set; } = string.Empty;
-    public decimal Balance { get; set; }
+    public decimal Balance { get; private set; }
     public DateOnly ExpiryDate { get; set; }
+
+    /// <summary>
+    /// Canje de la tarjeta como medio de pago de un pedido (Fase 6b). Descuenta
+    /// <paramref name="amount"/> del saldo y devuelve el asiento (<c>amount</c>
+    /// negativo). La emisión y recarga del saldo son de la Fase 8.
+    /// </summary>
+    public GiftCardTransaction Redeem(int orderId, decimal amount, DateTime now)
+    {
+        if (amount <= 0m)
+        {
+            throw new DomainRuleException("sales.gift_card_invalid_amount", "El importe a canjear debe ser mayor que cero.");
+        }
+        if (amount > Balance)
+        {
+            throw new DomainRuleException("sales.gift_card_insufficient", "Saldo insuficiente en la tarjeta regalo.");
+        }
+        Balance -= amount;
+        return new GiftCardTransaction
+        {
+            GiftCardId = Id,
+            OrderId = orderId,
+            Amount = -amount,
+            TransactionTime = now,
+        };
+    }
 }
 
 public sealed class GiftCardTransaction
@@ -72,4 +97,10 @@ public interface ICustomerRepository
     Task<IReadOnlyList<Customer>> ListAsync(string? search, int skip, int take, CancellationToken ct = default);
     Task<int> CountAsync(string? search, CancellationToken ct = default);
     void Add(Customer customer);
+}
+
+public interface IGiftCardRepository
+{
+    Task<GiftCard?> GetAsync(int id, CancellationToken ct = default);
+    void AddTransaction(GiftCardTransaction transaction);
 }

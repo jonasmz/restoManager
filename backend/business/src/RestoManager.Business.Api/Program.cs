@@ -46,7 +46,8 @@ if (authEnabled)
         .AddPolicy("OrgStaff", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"))
         .AddPolicy("MenuAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"))
         .AddPolicy("DiningRoomAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "WAITER"))
-        .AddPolicy("SalesAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "WAITER"));
+        .AddPolicy("SalesAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "WAITER"))
+        .AddPolicy("DiscountAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"));
 }
 
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];

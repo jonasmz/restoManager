@@ -2,7 +2,7 @@ namespace RestoManager.Business.Domain.Sales;
 
 public interface IOrderRepository
 {
-    /// <summary>Carga el pedido con sus ítems.</summary>
+    /// <summary>Carga el pedido con sus ítems, descuentos y pagos.</summary>
     Task<Order?> GetAsync(int id, CancellationToken ct = default);
 
     Task<IReadOnlyList<Order>> ListAsync(
@@ -26,4 +26,13 @@ public interface IOrderRepository
         CancellationToken ct = default);
 
     void Add(Order order);
+}
+
+public interface IDiscountRepository
+{
+    Task<Discount?> GetAsync(int id, CancellationToken ct = default);
+    Task<bool> ExistsAsync(int id, CancellationToken ct = default);
+    Task<IReadOnlyList<Discount>> ListAsync(string? search, int skip, int take, CancellationToken ct = default);
+    Task<int> CountAsync(string? search, CancellationToken ct = default);
+    void Add(Discount discount);
 }
