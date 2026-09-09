@@ -15,6 +15,7 @@ export interface NavGroup {
 
 const INV_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'] as const;
 const MENU_ROLES = ['ADMIN', 'BRANCH_MANAGER'] as const;
+const SALON_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -42,6 +43,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { label: 'Proveedores', icon: 'ti-truck-delivery', route: '/purchasing/suppliers', roles: INV_ROLES },
       { label: 'Órdenes de compra', icon: 'ti-clipboard-list', route: '/purchasing/orders', roles: INV_ROLES },
+    ],
+  },
+  {
+    title: 'Salón',
+    items: [
+      { label: 'Tablero', icon: 'ti-layout-grid', route: '/salon/floor', roles: SALON_ROLES },
+      { label: 'Mesas', icon: 'ti-armchair', route: '/salon/tables', roles: SALON_ROLES },
+      { label: 'Reservas', icon: 'ti-calendar-event', route: '/salon/reservations', roles: SALON_ROLES },
     ],
   },
   {
