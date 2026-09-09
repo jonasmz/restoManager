@@ -6,6 +6,9 @@ using RestoManager.Business.Application.Inventory.Ingredients;
 using RestoManager.Business.Application.Inventory.Ledger;
 using RestoManager.Business.Application.Inventory.Stock;
 using RestoManager.Business.Application.Inventory.Waste;
+using RestoManager.Business.Application.Menu.Categories;
+using RestoManager.Business.Application.Menu.Items;
+using RestoManager.Business.Application.Menu.Stations;
 using RestoManager.Business.Application.Organization.Branches;
 using RestoManager.Business.Application.Organization.Departments;
 using RestoManager.Business.Application.Organization.Employees;
@@ -13,6 +16,7 @@ using RestoManager.Business.Application.Organization.Restaurants;
 using RestoManager.Business.Application.Organization.Roles;
 using RestoManager.Business.Application.Purchasing.Orders;
 using RestoManager.Business.Application.Purchasing.Suppliers;
+using RestoManager.Business.Application.Tax.TaxRates;
 
 namespace RestoManager.Business.Application;
 
@@ -66,6 +70,26 @@ public static class DependencyInjection
         services.AddScoped<GetEmployeeHandler>();
         services.AddScoped<EmployeeShiftsHandler>();
         services.AddScoped<EmployeeLeavesHandler>();
+
+        // Menú y cocina
+        services.AddScoped<SaveCategoryHandler>();
+        services.AddScoped<ListCategoriesHandler>();
+        services.AddScoped<GetCategoryHandler>();
+        services.AddScoped<SaveMenuItemHandler>();
+        services.AddScoped<ListMenuItemsHandler>();
+        services.AddScoped<GetMenuItemHandler>();
+        services.AddScoped<GetMenuItemCostHandler>();
+        services.AddScoped<GetMenuItemAvailabilityHandler>();
+        services.AddScoped<SetMenuItemAvailabilityHandler>();
+        services.AddScoped<SaveKitchenStationHandler>();
+        services.AddScoped<ListKitchenStationsHandler>();
+        services.AddScoped<GetKitchenStationHandler>();
+        services.AddScoped<SetStationMenuItemsHandler>();
+
+        // Fiscal
+        services.AddScoped<SaveTaxRateHandler>();
+        services.AddScoped<ListTaxRatesHandler>();
+        services.AddScoped<GetTaxRateHandler>();
 
         return services;
     }

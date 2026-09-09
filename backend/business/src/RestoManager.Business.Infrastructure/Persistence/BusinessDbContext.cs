@@ -38,6 +38,7 @@ public sealed class BusinessDbContext(DbContextOptions<BusinessDbContext> option
     public DbSet<RecipeItem> RecipeItems => Set<RecipeItem>();
     public DbSet<KitchenStation> KitchenStations => Set<KitchenStation>();
     public DbSet<StationMenuItem> StationMenuItems => Set<StationMenuItem>();
+    public DbSet<MenuItemBranchAvailability> MenuItemBranchAvailabilities => Set<MenuItemBranchAvailability>();
 
     // Ventas
     public DbSet<Order> Orders => Set<Order>();
