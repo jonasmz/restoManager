@@ -29,6 +29,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       API_PROJECT: src/RestoManager.Auth.Api
       ConnectionStrings__IdentityDb: "Host=postgres;Port=5432;Database=resto_identity;Username=${POSTGRES_USER:-resto};Password=${POSTGRES_PASSWORD:-resto}"
+      # Emisor lógico = dirección de red del servicio, para que el descubrimiento OIDC
+      # de la Business API (iss + jwks_uri) sea coherente y alcanzable.
+      Auth__Issuer: "http://backend-auth:8080"
     command: ["bash", "-lc", "dotnet restore && dotnet watch run --project src/RestoManager.Auth.Api --non-interactive --no-launch-profile"]
     volumes:
       - ../backend/auth:/src
@@ -55,8 +58,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       API_PROJECT: src/RestoManager.Business.Api
       ConnectionStrings__BusinessDb: "Host=postgres;Port=5432;Database=resto_business;Username=${POSTGRES_USER:-resto};Password=${POSTGRES_PASSWORD:-resto}"
-      # Auth__Authority se define en la Fase 1, cuando la Auth API emite tokens.
-      Auth__Authority: ""
+      Auth__Authority: "http://backend-auth:8080"
+      Auth__Audience: "resto"
     command: ["bash", "-lc", "dotnet restore && dotnet watch run --project src/RestoManager.Business.Api --non-interactive --no-launch-profile"]
     volumes:
       - ../backend/business:/src
