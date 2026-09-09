@@ -32,4 +32,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       },
     ],
   },
+  {
+    title: 'Organización',
+    items: [
+      { label: 'Empresa', icon: 'ti-building-store', route: '/org/restaurant', roles: ['ADMIN', 'BRANCH_MANAGER'] },
+      { label: 'Sucursales', icon: 'ti-map-pin', route: '/org/branches', roles: ['ADMIN', 'BRANCH_MANAGER'] },
+      { label: 'Puestos', icon: 'ti-briefcase', route: '/org/roles', roles: ['ADMIN'] },
+      { label: 'Departamentos', icon: 'ti-users-group', route: '/org/departments', roles: ['ADMIN', 'BRANCH_MANAGER'] },
+      { label: 'Empleados', icon: 'ti-users', route: '/org/employees', roles: ['ADMIN', 'BRANCH_MANAGER'] },
+    ],
+  },
 ];
