@@ -39,6 +39,11 @@ internal sealed class FakeMovements : IInventoryMovementRepository
     public Task<IReadOnlyList<InventoryMovement>> ListAsync(
         int branchId, int? ingredientId, DateTime? from, DateTime? to, MovementType? movementType, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<InventoryMovement>>(Rows);
+
+    public Task<IReadOnlyList<InventoryMovement>> ListByReferenceAsync(
+        string referenceType, int referenceId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<InventoryMovement>>(
+            Rows.Where(m => m.ReferenceType == referenceType && m.ReferenceId == referenceId).ToList());
 }
 
 public class InventoryLedgerTests

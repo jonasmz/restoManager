@@ -80,6 +80,13 @@ public sealed class InventoryMovementRepository(BusinessDbContext db) : IInvento
 
         return await q.OrderBy(m => m.MovementTime).ThenBy(m => m.Id).ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<InventoryMovement>> ListByReferenceAsync(
+        string referenceType, int referenceId, CancellationToken cancellationToken = default)
+        => await db.InventoryMovements
+            .Where(m => m.ReferenceType == referenceType && m.ReferenceId == referenceId)
+            .OrderBy(m => m.Id)
+            .ToListAsync(cancellationToken);
 }
 
 public sealed class WasteLogRepository(BusinessDbContext db) : IWasteLogRepository
