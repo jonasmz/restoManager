@@ -12,11 +12,10 @@ public static class InventoryEndpoints
     {
         var group = app.MapGroup("/api/v1").WithTags("Inventario").RequireAuthorization("InventoryAccess");
 
-        // ---- Ingredientes (catálogo) ----
+        // ---- Ingredientes (catálogo global) ----
         group.MapGet("/ingredients", async (
             string? search, int? page, int? pageSize, ListIngredientsHandler handler, CancellationToken ct) =>
-            Results.Ok(await handler.HandleAsync(
-                new ListIngredientsQuery(search, page ?? 1, pageSize ?? 20), ct)));
+            Results.Ok(await handler.HandleAsync(new ListIngredientsQuery(search, page ?? 1, pageSize ?? 20), ct)));
 
         group.MapGet("/ingredients/{id:int}", async (int id, GetIngredientHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(id, ct)));
@@ -35,26 +34,25 @@ public static class InventoryEndpoints
             return Results.NoContent();
         });
 
-        // ---- Saldo y movimientos ----
-        group.MapGet("/inventory", async (int branchId, GetBranchStockHandler handler, CancellationToken ct) =>
-            Results.Ok(await handler.HandleAsync(branchId, ct)));
+        // ---- Saldo y movimientos (sucursal activa via X-Branch-Id) ----
+        group.MapGet("/inventory", async (GetBranchStockHandler handler, CancellationToken ct) =>
+            Results.Ok(await handler.HandleAsync(ct)));
 
         group.MapGet("/inventory/movements", async (
-            int branchId, int? ingredientId, DateTime? from, DateTime? to, string? type,
+            int? ingredientId, DateTime? from, DateTime? to, string? type,
             ListMovementsHandler handler, CancellationToken ct) =>
-            Results.Ok(await handler.HandleAsync(
-                new ListMovementsQuery(branchId, ingredientId, from, to, type), ct)));
+            Results.Ok(await handler.HandleAsync(new ListMovementsQuery(ingredientId, from, to, type), ct)));
 
         // ---- Mermas ----
         group.MapGet("/inventory/waste", async (
-            int branchId, int? ingredientId, ListWasteLogsHandler handler, CancellationToken ct) =>
-            Results.Ok(await handler.HandleAsync(new ListWasteLogsQuery(branchId, ingredientId), ct)));
+            int? ingredientId, ListWasteLogsHandler handler, CancellationToken ct) =>
+            Results.Ok(await handler.HandleAsync(new ListWasteLogsQuery(ingredientId), ct)));
 
         group.MapPost("/inventory/waste", async (
             RegisterWasteRequest body, RegisterWasteHandler handler, CancellationToken ct) =>
         {
             var id = await handler.HandleAsync(
-                new RegisterWasteCommand(body.BranchId, body.IngredientId, body.Quantity, body.Reason), ct);
+                new RegisterWasteCommand(body.IngredientId, body.Quantity, body.Reason), ct);
             return Results.Created($"/api/v1/inventory/waste/{id}", new CreatedIdResponse(id));
         });
 
@@ -62,16 +60,14 @@ public static class InventoryEndpoints
         group.MapPost("/inventory/adjustments", async (
             AdjustStockRequest body, AdjustStockHandler handler, CancellationToken ct) =>
         {
-            await handler.HandleAsync(
-                new AdjustStockCommand(body.BranchId, body.IngredientId, body.Quantity, body.Reason), ct);
+            await handler.HandleAsync(new AdjustStockCommand(body.IngredientId, body.Quantity, body.Reason), ct);
             return Results.NoContent();
         });
 
         group.MapPost("/inventory/initial-load", async (
             LoadInitialStockRequest body, LoadInitialStockHandler handler, CancellationToken ct) =>
         {
-            await handler.HandleAsync(
-                new LoadInitialStockCommand(body.BranchId, body.IngredientId, body.Quantity), ct);
+            await handler.HandleAsync(new LoadInitialStockCommand(body.IngredientId, body.Quantity), ct);
             return Results.NoContent();
         });
     }

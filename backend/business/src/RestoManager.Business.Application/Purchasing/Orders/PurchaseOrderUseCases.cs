@@ -15,16 +15,15 @@ public sealed record PurchaseOrderDto(
     int Id, int SupplierId, int BranchId, DateOnly OrderDate, decimal TotalAmount, string Status,
     IReadOnlyList<PurchaseOrderLineDto> Items);
 
-// ---- Crear (DRAFT) ----
+// ---- Crear (DRAFT) — sucursal = sucursal activa ----
 public sealed record CreatePurchaseOrderCommand(
-    int SupplierId, int BranchId, DateOnly OrderDate, IReadOnlyList<PurchaseOrderLineDto> Items);
+    int SupplierId, DateOnly OrderDate, IReadOnlyList<PurchaseOrderLineDto> Items);
 
 public sealed class CreatePurchaseOrderValidator : AbstractValidator<CreatePurchaseOrderCommand>
 {
     public CreatePurchaseOrderValidator()
     {
         RuleFor(x => x.SupplierId).GreaterThan(0);
-        RuleFor(x => x.BranchId).GreaterThan(0);
         RuleFor(x => x.Items).NotEmpty();
         RuleForEach(x => x.Items).ChildRules(line =>
         {
@@ -40,13 +39,13 @@ public sealed class CreatePurchaseOrderHandler(
     ISupplierRepository suppliers,
     IIngredientRepository ingredients,
     IUnitOfWork unitOfWork,
-    BranchAccessGuard access,
+    IBranchContext branchContext,
     IValidator<CreatePurchaseOrderCommand> validator)
 {
     public async Task<int> HandleAsync(CreatePurchaseOrderCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        access.EnsureCanOperate(command.BranchId);
+        var branchId = branchContext.BranchId;
 
         if (await suppliers.GetAsync(command.SupplierId, cancellationToken) is null)
         {
@@ -61,7 +60,7 @@ public sealed class CreatePurchaseOrderHandler(
         }
 
         var order = PurchaseOrder.Draft(
-            command.SupplierId, command.BranchId, command.OrderDate,
+            command.SupplierId, branchId, command.OrderDate,
             command.Items.Select(l => (l.IngredientId, l.Quantity, l.UnitPrice)));
 
         purchaseOrders.Add(order);
@@ -131,17 +130,18 @@ public sealed class ReceivePurchaseOrderHandler(
     }
 }
 
-// ---- Consultas ----
-public sealed record ListPurchaseOrdersQuery(int? BranchId, string? Status, int Page = 1, int PageSize = 20);
+// ---- Consultas (sucursal = sucursal activa) ----
+public sealed record ListPurchaseOrdersQuery(string? Status, int Page = 1, int PageSize = 20);
 
-public sealed class ListPurchaseOrdersHandler(IPurchaseOrderRepository purchaseOrders)
+public sealed class ListPurchaseOrdersHandler(IPurchaseOrderRepository purchaseOrders, IBranchContext branchContext)
 {
     public async Task<PagedResult<PurchaseOrderDto>> HandleAsync(ListPurchaseOrdersQuery query, CancellationToken cancellationToken = default)
     {
         var page = new PageRequest(query.Page, query.PageSize);
         PurchaseOrderStatus? status = query.Status is null ? null : PurchaseOrderStatusExtensions.FromDbValue(query.Status);
-        var items = await purchaseOrders.ListAsync(query.BranchId, status, page.Skip, page.Take, cancellationToken);
-        var total = await purchaseOrders.CountAsync(query.BranchId, status, cancellationToken);
+        var branchId = branchContext.BranchId;
+        var items = await purchaseOrders.ListAsync(branchId, status, page.Skip, page.Take, cancellationToken);
+        var total = await purchaseOrders.CountAsync(branchId, status, cancellationToken);
         return new PagedResult<PurchaseOrderDto>(items.Select(Map).ToList(), query.Page, page.Take, total);
     }
 

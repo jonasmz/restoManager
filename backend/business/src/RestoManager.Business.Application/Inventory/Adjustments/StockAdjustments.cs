@@ -1,6 +1,5 @@
 using FluentValidation;
 using RestoManager.Business.Application.Abstractions;
-using RestoManager.Business.Application.Common;
 using RestoManager.Business.Application.Inventory.Ledger;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
@@ -9,13 +8,12 @@ using RestoManager.Business.Domain.Inventory;
 namespace RestoManager.Business.Application.Inventory.Adjustments;
 
 // ---- Ajuste manual (ADJUSTMENT, cantidad firmada) ----
-public sealed record AdjustStockCommand(int BranchId, int IngredientId, decimal Quantity, string Reason);
+public sealed record AdjustStockCommand(int IngredientId, decimal Quantity, string Reason);
 
 public sealed class AdjustStockValidator : AbstractValidator<AdjustStockCommand>
 {
     public AdjustStockValidator()
     {
-        RuleFor(x => x.BranchId).GreaterThan(0);
         RuleFor(x => x.IngredientId).GreaterThan(0);
         RuleFor(x => x.Quantity).NotEqual(0).WithMessage("La cantidad del ajuste no puede ser cero.");
         RuleFor(x => x.Reason).NotEmpty().MaximumLength(255);
@@ -27,13 +25,13 @@ public sealed class AdjustStockHandler(
     InventoryLedger ledger,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
-    BranchAccessGuard access,
+    IBranchContext branchContext,
     IValidator<AdjustStockCommand> validator)
 {
     public async Task HandleAsync(AdjustStockCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        access.EnsureCanOperate(command.BranchId);
+        var branchId = branchContext.BranchId;
 
         if (!await ingredients.ExistsAsync(command.IngredientId, cancellationToken))
         {
@@ -44,7 +42,7 @@ public sealed class AdjustStockHandler(
         {
             await ledger.PostAsync(
                 new LedgerEntry(
-                    command.BranchId,
+                    branchId,
                     command.IngredientId,
                     MovementType.Adjustment,
                     command.Quantity,
@@ -56,13 +54,12 @@ public sealed class AdjustStockHandler(
 }
 
 // ---- Carga inicial (ADJUSTMENT + reference INITIAL_LOAD, cantidad positiva) ----
-public sealed record LoadInitialStockCommand(int BranchId, int IngredientId, decimal Quantity);
+public sealed record LoadInitialStockCommand(int IngredientId, decimal Quantity);
 
 public sealed class LoadInitialStockValidator : AbstractValidator<LoadInitialStockCommand>
 {
     public LoadInitialStockValidator()
     {
-        RuleFor(x => x.BranchId).GreaterThan(0);
         RuleFor(x => x.IngredientId).GreaterThan(0);
         RuleFor(x => x.Quantity).GreaterThan(0);
     }
@@ -74,20 +71,20 @@ public sealed class LoadInitialStockHandler(
     InventoryLedger ledger,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
-    BranchAccessGuard access,
+    IBranchContext branchContext,
     IValidator<LoadInitialStockCommand> validator)
 {
     public async Task HandleAsync(LoadInitialStockCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        access.EnsureCanOperate(command.BranchId);
+        var branchId = branchContext.BranchId;
 
         if (!await ingredients.ExistsAsync(command.IngredientId, cancellationToken))
         {
             throw new NotFoundException("ingrediente", command.IngredientId);
         }
 
-        var existing = await balances.GetAsync(command.BranchId, command.IngredientId, cancellationToken);
+        var existing = await balances.GetAsync(branchId, command.IngredientId, cancellationToken);
         if (existing is { StockQuantity: > 0 })
         {
             throw new DomainRuleException(
@@ -99,7 +96,7 @@ public sealed class LoadInitialStockHandler(
         {
             await ledger.PostAsync(
                 new LedgerEntry(
-                    command.BranchId,
+                    branchId,
                     command.IngredientId,
                     MovementType.Adjustment,
                     command.Quantity,

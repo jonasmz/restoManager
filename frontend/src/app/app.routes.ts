@@ -4,6 +4,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 
 const orgRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
+const invRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'INVENTORY');
 
 /**
  * El shell (Layout) queda tras `authGuard`. Las páginas de módulos se añaden por
@@ -22,8 +23,33 @@ export const routes: Routes = [
       },
       {
         path: 'inventory',
-        loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
-        title: 'Inventario',
+        canActivate: [invRoles],
+        loadComponent: () => import('./features/inventory/stock-page').then((m) => m.StockPage),
+        title: 'Existencias',
+      },
+      {
+        path: 'inventory/ingredients',
+        canActivate: [invRoles],
+        loadComponent: () => import('./features/inventory/ingredients-page').then((m) => m.IngredientsPage),
+        title: 'Ingredientes',
+      },
+      {
+        path: 'inventory/movements',
+        canActivate: [invRoles],
+        loadComponent: () => import('./features/inventory/movements-page').then((m) => m.MovementsPage),
+        title: 'Movimientos de inventario',
+      },
+      {
+        path: 'purchasing/suppliers',
+        canActivate: [invRoles],
+        loadComponent: () => import('./features/purchasing/suppliers-page').then((m) => m.SuppliersPage),
+        title: 'Proveedores',
+      },
+      {
+        path: 'purchasing/orders',
+        canActivate: [invRoles],
+        loadComponent: () => import('./features/purchasing/purchase-orders-page').then((m) => m.PurchaseOrdersPage),
+        title: 'Órdenes de compra',
       },
       {
         path: 'reports',
