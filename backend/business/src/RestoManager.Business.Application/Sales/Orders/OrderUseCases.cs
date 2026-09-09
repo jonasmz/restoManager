@@ -1,6 +1,7 @@
 using FluentValidation;
 using RestoManager.Business.Application.Abstractions;
 using RestoManager.Business.Application.Common;
+using RestoManager.Business.Application.Sales.Consumption;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
 using RestoManager.Business.Domain.Customers;
@@ -359,6 +360,7 @@ public sealed class RegisterPaymentValidator : AbstractValidator<RegisterPayment
 public sealed class RegisterPaymentHandler(
     IOrderRepository orders,
     IGiftCardRepository giftCards,
+    SaleConsumptionService saleConsumption,
     IUnitOfWork unitOfWork,
     BranchAccessGuard access,
     IClock clock,
@@ -375,24 +377,33 @@ public sealed class RegisterPaymentHandler(
         var method = PaymentMethodExtensions.FromDbValue(command.Method);
         var now = clock.UtcNow;
 
+        GiftCard? card = null;
         if (method == PaymentMethod.GiftCard)
         {
-            var card = await giftCards.GetAsync(command.GiftCardId!.Value, ct)
+            card = await giftCards.GetAsync(command.GiftCardId!.Value, ct)
                 ?? throw new NotFoundException("tarjeta regalo", command.GiftCardId!.Value);
-
-            Payment payment = null!;
-            await unitOfWork.ExecuteInTransactionAsync(_ =>
-            {
-                payment = order.RegisterPayment(method, command.Amount, now);
-                giftCards.AddTransaction(card.Redeem(order.Id, command.Amount, now));
-                return Task.CompletedTask;
-            }, ct);
-            return payment.Id;
         }
 
-        var registered = order.RegisterPayment(method, command.Amount, now);
-        await unitOfWork.SaveChangesAsync(ct);
-        return registered.Id;
+        var statusBefore = order.Status;
+        Payment payment = null!;
+
+        await unitOfWork.ExecuteInTransactionAsync(async token =>
+        {
+            payment = order.RegisterPayment(method, command.Amount, now);
+            if (card is not null)
+            {
+                giftCards.AddTransaction(card.Redeem(order.Id, command.Amount, now));
+            }
+
+            // Evento de dominio del SALE (decisión Fase 6): el 1.er pago CONFIRMED pasa
+            // el pedido de OPEN a PAID y dispara el descuento de stock por receta (§7.5).
+            if (statusBefore == OrderStatus.Open && order.Status == OrderStatus.Paid)
+            {
+                await saleConsumption.PostForOrderAsync(order, token);
+            }
+        }, ct);
+
+        return payment.Id;
     }
 }
 
@@ -410,15 +421,29 @@ public sealed class CloseOrderHandler(IOrderRepository orders, IUnitOfWork unitO
     }
 }
 
-public sealed class CancelOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, BranchAccessGuard access)
+public sealed class CancelOrderHandler(
+    IOrderRepository orders,
+    SaleConsumptionService saleConsumption,
+    IUnitOfWork unitOfWork,
+    BranchAccessGuard access)
 {
     public async Task HandleAsync(int orderId, CancellationToken ct = default)
     {
         var order = await orders.GetAsync(orderId, ct) ?? throw new NotFoundException("pedido", orderId);
         access.EnsureCanOperate(order.BranchId);
 
-        // Fase 6c: si el pedido estaba PAID, revertir el consumo de stock aquí (misma tx).
-        order.CancelOrder();
-        await unitOfWork.SaveChangesAsync(ct);
+        var statusBefore = order.Status;
+
+        await unitOfWork.ExecuteInTransactionAsync(async token =>
+        {
+            order.CancelOrder();
+
+            // Si el pedido ya estaba contabilizado (PAID), revertir el consumo de stock
+            // en la misma transacción (nunca se borran movimientos: se postea el opuesto).
+            if (statusBefore == OrderStatus.Paid)
+            {
+                await saleConsumption.ReverseForOrderAsync(order.Id, token);
+            }
+        }, ct);
     }
 }

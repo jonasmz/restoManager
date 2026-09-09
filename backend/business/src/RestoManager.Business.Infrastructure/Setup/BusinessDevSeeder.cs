@@ -142,9 +142,29 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         logger.LogWarning("Semilla de salón creada: {N} mesas ({B} sucursales).", branches.Count * 6, branches.Count);
     }
 
-    /// <summary>Fase 6b: un descuento del catálogo y una tarjeta regalo con saldo para probar pagos.</summary>
+    /// <summary>
+    /// Fase 6: descuentos y tarjeta regalo demo (6b) + stock inicial por sucursal para
+    /// que el descuento por receta de la 6c tenga saldo (6c).
+    /// </summary>
     private async Task SeedSalesAsync(CancellationToken cancellationToken)
     {
+        if (!await db.BranchInventories.AnyAsync(cancellationToken))
+        {
+            var branchIds = await db.Branches.Select(b => b.Id).ToListAsync(cancellationToken);
+            var ingredientIds = await db.Ingredients.Select(i => i.Id).ToListAsync(cancellationToken);
+            foreach (var branchId in branchIds)
+            {
+                foreach (var ingredientId in ingredientIds)
+                {
+                    // Semilla: saldo directo (el flujo de carga inicial con movimientos es Fase 3).
+                    var balance = BranchInventory.Start(branchId, ingredientId);
+                    balance.Apply(50m);
+                    db.BranchInventories.Add(balance);
+                }
+            }
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
         if (!await db.Discounts.AnyAsync(cancellationToken))
         {
             var today = DateOnly.FromDateTime(DateTime.UtcNow);

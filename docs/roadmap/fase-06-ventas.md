@@ -98,7 +98,7 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
       recalculado ante cada cambio. *(6a/6b)*
 - [x] Varios `payments` por pedido y varias `orders` por `table_session` (split,
       §5.2). *(6b)*
-- [ ] El descuento de stock ocurre **una sola vez** por pedido (DOM-07); cancelar un
+- [x] El descuento de stock ocurre **una sola vez** por pedido (DOM-07); cancelar un
       pedido ya contabilizado genera reversa (§7.5). *(6c)*
 - [x] Ningún camino valida cupo/capacidad de barra (BAR-03, DOM-09, §15).
 - [~] `orders.status` de "venta efectiva" definido y usado por las consultas (MET-01).
@@ -118,7 +118,7 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total. **Hecha (PR #16).**
 2. `feat/fase-06b-descuentos-pagos` — descuentos, pagos múltiples, gift card como
    medio de pago. **Hecha (PR #17).**
-3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa.
+3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa. **Hecha (PR #18).**
 4. `feat/fase-06d-pos-frontend` — POS, cuenta, cobro, historial.
 
 ### Estado 6a (backend de pedidos)
@@ -171,5 +171,31 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
   gift card (canje descuenta saldo + asiento −monto, saldo insuficiente 409, sin id
   422), cierre (subpagado 409 → completo 204), cancelación (pagos → `REFUNDED`, editar
   cancelado 409, idempotente).
-- Pendiente 6c: `PostSaleConsumption` en la transición `OPEN → PAID` (idempotente por
-  `reference_type='ORDER'`) y su reversa al cancelar un pedido ya `PAID`.
+### Estado 6c (descuento de stock por receta y reversa)
+
+- `SaleConsumptionService` (`Application/Sales/Consumption/`):
+  - `PostForOrderAsync(order)` — expande `order_items` por `recipe_items`, agrupa la
+    cantidad por ingrediente (redondeo a 2 dec.) y postea `SALE` negativos vía el
+    `InventoryLedger` de Fase 3. Idempotente por `reference_type='ORDER'` +
+    `reference_id = order.id` (DOM-07).
+  - `ReverseForOrderAsync(orderId)` — por cada `SALE` de esa referencia postea un
+    `ADJUSTMENT` de signo opuesto con la misma referencia (nunca borra movimientos;
+    idempotente ante reintentos de cancelación).
+- **Evento**: `RegisterPaymentHandler` detecta la transición `OPEN → PAID` (primer
+  pago `CONFIRMED`) y llama a `PostForOrderAsync` **en la misma transacción** que el
+  pago (y el canje de gift card). `CancelOrderHandler`: si el pedido estaba `PAID`,
+  llama a `ReverseForOrderAsync` en la misma transacción que la cancelación.
+- `IInventoryMovementRepository.ListByReferenceAsync(type, id)` nuevo.
+- **INV-03**: si el `SALE` dejaría un saldo negativo, el `InventoryLedger` lanza
+  `inventory.insufficient_stock` (409) y **toda la transacción del pago se revierte**
+  (no se sobrevende). Un relajamiento configurable puede llegar más adelante.
+- Seeder `SeedSalesAsync`: además de descuentos + gift card, siembra saldo inicial
+  (50 u.) por ingrediente y sucursal si `branch_inventory` está vacío, para que el
+  descuento por receta tenga stock en un entorno limpio.
+- **Sin migración** (solo un método de repositorio, un servicio y cableado de handlers).
+- 5 tests unit nuevos (93 total): agrupación por ingrediente, idempotencia del
+  consumo, ítems sin receta, reversa opuesta que restaura el saldo, idempotencia de
+  la reversa. Verificado e2e vs compose: 2×pizza + 3×empanada → un `SALE` de −0.75
+  de harina; split de pago no re-descuenta; cancelar un pedido `PAID` añade el
+  `ADJUSTMENT` +0.30 y conserva el `SALE`.
+- Con esto la Fase 6 queda **solo pendiente del frontend (6d)**.

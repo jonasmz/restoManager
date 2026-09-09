@@ -38,6 +38,10 @@ public interface IInventoryMovementRepository
         DateTime? to,
         MovementType? movementType,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Todos los movimientos de una referencia (p. ej. <c>ORDER</c> + id de pedido).</summary>
+    Task<IReadOnlyList<InventoryMovement>> ListByReferenceAsync(
+        string referenceType, int referenceId, CancellationToken cancellationToken = default);
 }
 
 public interface IWasteLogRepository
