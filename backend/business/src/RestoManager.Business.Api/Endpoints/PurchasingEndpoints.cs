@@ -34,12 +34,12 @@ public static class PurchasingEndpoints
             return Results.NoContent();
         });
 
-        // ---- Órdenes de compra ----
+        // ---- Órdenes de compra (sucursal activa via X-Branch-Id) ----
         group.MapGet("/purchase-orders", async (
-            int? branchId, string? status, int? page, int? pageSize,
+            string? status, int? page, int? pageSize,
             ListPurchaseOrdersHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(
-                new ListPurchaseOrdersQuery(branchId, status, page ?? 1, pageSize ?? 20), ct)));
+                new ListPurchaseOrdersQuery(status, page ?? 1, pageSize ?? 20), ct)));
 
         group.MapGet("/purchase-orders/{id:int}", async (
             int id, GetPurchaseOrderHandler handler, CancellationToken ct) =>
@@ -49,7 +49,7 @@ public static class PurchasingEndpoints
             CreatePurchaseOrderRequest body, CreatePurchaseOrderHandler handler, CancellationToken ct) =>
         {
             var id = await handler.HandleAsync(new CreatePurchaseOrderCommand(
-                body.SupplierId, body.BranchId, body.OrderDate, body.Items), ct);
+                body.SupplierId, body.OrderDate, body.Items), ct);
             return Results.Created($"/api/v1/purchase-orders/{id}", new CreatedIdResponse(id));
         });
 

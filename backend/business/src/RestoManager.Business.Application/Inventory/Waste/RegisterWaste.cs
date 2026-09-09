@@ -1,6 +1,5 @@
 using FluentValidation;
 using RestoManager.Business.Application.Abstractions;
-using RestoManager.Business.Application.Common;
 using RestoManager.Business.Application.Inventory.Ledger;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
@@ -8,13 +7,12 @@ using RestoManager.Business.Domain.Inventory;
 
 namespace RestoManager.Business.Application.Inventory.Waste;
 
-public sealed record RegisterWasteCommand(int BranchId, int IngredientId, decimal Quantity, string Reason);
+public sealed record RegisterWasteCommand(int IngredientId, decimal Quantity, string Reason);
 
 public sealed class RegisterWasteValidator : AbstractValidator<RegisterWasteCommand>
 {
     public RegisterWasteValidator()
     {
-        RuleFor(x => x.BranchId).GreaterThan(0);
         RuleFor(x => x.IngredientId).GreaterThan(0);
         RuleFor(x => x.Quantity).GreaterThan(0);
         RuleFor(x => x.Reason).NotEmpty().MaximumLength(255);
@@ -23,7 +21,7 @@ public sealed class RegisterWasteValidator : AbstractValidator<RegisterWasteComm
 
 /// <summary>
 /// INV-08 / §11.6: crear el <c>waste_log</c> y postear el movimiento WASTE por la
-/// misma cantidad, en una sola transacción.
+/// misma cantidad, en una sola transacción. Sucursal = sucursal activa.
 /// </summary>
 public sealed class RegisterWasteHandler(
     IWasteLogRepository wasteLogs,
@@ -32,13 +30,13 @@ public sealed class RegisterWasteHandler(
     IUnitOfWork unitOfWork,
     IClock clock,
     ICurrentUser currentUser,
-    BranchAccessGuard access,
+    IBranchContext branchContext,
     IValidator<RegisterWasteCommand> validator)
 {
     public async Task<int> HandleAsync(RegisterWasteCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        access.EnsureCanOperate(command.BranchId);
+        var branchId = branchContext.BranchId;
 
         if (!await ingredients.ExistsAsync(command.IngredientId, cancellationToken))
         {
@@ -47,7 +45,7 @@ public sealed class RegisterWasteHandler(
 
         var employeeId = currentUser.EmployeeId;
         var wasteLog = WasteLog.Create(
-            command.BranchId, command.IngredientId, command.Quantity, command.Reason, clock.UtcNow, employeeId);
+            branchId, command.IngredientId, command.Quantity, command.Reason, clock.UtcNow, employeeId);
 
         await unitOfWork.ExecuteInTransactionAsync(async token =>
         {
@@ -56,7 +54,7 @@ public sealed class RegisterWasteHandler(
 
             await ledger.PostAsync(
                 new LedgerEntry(
-                    command.BranchId,
+                    branchId,
                     command.IngredientId,
                     MovementType.Waste,
                     -command.Quantity,
@@ -70,17 +68,16 @@ public sealed class RegisterWasteHandler(
 }
 
 // ---- Listado ----
-public sealed record ListWasteLogsQuery(int BranchId, int? IngredientId);
+public sealed record ListWasteLogsQuery(int? IngredientId);
 
 public sealed record WasteLogDto(
     int Id, int IngredientId, decimal Quantity, string Reason, DateTime LoggedTime, int LoggedBy);
 
-public sealed class ListWasteLogsHandler(IWasteLogRepository wasteLogs, BranchAccessGuard access)
+public sealed class ListWasteLogsHandler(IWasteLogRepository wasteLogs, IBranchContext branchContext)
 {
     public async Task<IReadOnlyList<WasteLogDto>> HandleAsync(ListWasteLogsQuery query, CancellationToken cancellationToken = default)
     {
-        access.EnsureCanOperate(query.BranchId);
-        var rows = await wasteLogs.ListAsync(query.BranchId, query.IngredientId, cancellationToken);
+        var rows = await wasteLogs.ListAsync(branchContext.BranchId, query.IngredientId, cancellationToken);
         return rows.Select(w => new WasteLogDto(w.Id, w.IngredientId, w.Quantity, w.Reason, w.LoggedTime, w.LoggedBy)).ToList();
     }
 }

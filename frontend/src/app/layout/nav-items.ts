@@ -13,23 +13,34 @@ export interface NavGroup {
   readonly items: readonly NavItem[];
 }
 
+const INV_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'] as const;
+
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     title: 'Principal',
     items: [
       { label: 'Panel', icon: 'ti-home', route: '/', exact: true },
       {
-        label: 'Inventario',
-        icon: 'ti-box-seam',
-        route: '/inventory',
-        roles: ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'],
-      },
-      {
         label: 'Reportes',
         icon: 'ti-receipt',
         route: '/reports',
         roles: ['ADMIN', 'BRANCH_MANAGER'],
       },
+    ],
+  },
+  {
+    title: 'Inventario',
+    items: [
+      { label: 'Existencias', icon: 'ti-box-seam', route: '/inventory', exact: true, roles: INV_ROLES },
+      { label: 'Ingredientes', icon: 'ti-carrot', route: '/inventory/ingredients', roles: INV_ROLES },
+      { label: 'Movimientos', icon: 'ti-arrows-exchange', route: '/inventory/movements', roles: INV_ROLES },
+    ],
+  },
+  {
+    title: 'Compras',
+    items: [
+      { label: 'Proveedores', icon: 'ti-truck-delivery', route: '/purchasing/suppliers', roles: INV_ROLES },
+      { label: 'Órdenes de compra', icon: 'ti-clipboard-list', route: '/purchasing/orders', roles: INV_ROLES },
     ],
   },
   {

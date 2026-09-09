@@ -1,5 +1,4 @@
 using RestoManager.Business.Application.Abstractions;
-using RestoManager.Business.Application.Common;
 using RestoManager.Business.Domain.Inventory;
 
 namespace RestoManager.Business.Application.Inventory.Stock;
@@ -15,13 +14,11 @@ public sealed record MovementDto(
 public sealed class GetBranchStockHandler(
     IBranchInventoryRepository balances,
     IIngredientRepository ingredients,
-    BranchAccessGuard access)
+    IBranchContext branchContext)
 {
-    public async Task<IReadOnlyList<BranchStockLineDto>> HandleAsync(int branchId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<BranchStockLineDto>> HandleAsync(CancellationToken cancellationToken = default)
     {
-        access.EnsureCanOperate(branchId);
-
-        var rows = await balances.ListByBranchAsync(branchId, cancellationToken);
+        var rows = await balances.ListByBranchAsync(branchContext.BranchId, cancellationToken);
         var result = new List<BranchStockLineDto>(rows.Count);
         foreach (var row in rows)
         {
@@ -39,20 +36,17 @@ public sealed class GetBranchStockHandler(
 }
 
 // ---- Historial de movimientos (spec §12.3) ----
-public sealed record ListMovementsQuery(
-    int BranchId, int? IngredientId, DateTime? From, DateTime? To, string? MovementType);
+public sealed record ListMovementsQuery(int? IngredientId, DateTime? From, DateTime? To, string? MovementType);
 
-public sealed class ListMovementsHandler(IInventoryMovementRepository movements, BranchAccessGuard access)
+public sealed class ListMovementsHandler(IInventoryMovementRepository movements, IBranchContext branchContext)
 {
     public async Task<IReadOnlyList<MovementDto>> HandleAsync(ListMovementsQuery query, CancellationToken cancellationToken = default)
     {
-        access.EnsureCanOperate(query.BranchId);
-
         MovementType? type = query.MovementType is null
             ? null
             : MovementTypeExtensions.FromDbValue(query.MovementType);
 
-        var rows = await movements.ListAsync(query.BranchId, query.IngredientId, query.From, query.To, type, cancellationToken);
+        var rows = await movements.ListAsync(branchContext.BranchId, query.IngredientId, query.From, query.To, type, cancellationToken);
         return rows.Select(m => new MovementDto(
             m.Id, m.IngredientId, m.MovementType.ToDbValue(), m.Quantity, m.MovementTime,
             m.ReferenceType, m.ReferenceId, m.EmployeeId)).ToList();

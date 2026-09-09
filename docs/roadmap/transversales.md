@@ -13,8 +13,12 @@ Casi todo el dominio cuelga de `branch_id`. Reglas:
 - El **JWT** incluye un claim `branch_id` (sucursal operativa del empleado) y, si el
   usuario opera en varias, `branch_ids`.
 - El frontend tiene un **selector de sucursal** en el topbar. La sucursal activa es
-  una **señal global** (`BranchContextService`) y se envía en cada request a la
-  Business API (header `X-Branch-Id` o query, se fija en Fase 2).
+  una **señal global** (`BranchContextService`) y se envía en **cada** request a la
+  Business API en el header **`X-Branch-Id`** (interceptor `branchHeaderInterceptor`).
+  Este es el **único** mecanismo: el backend lo resuelve vía el puerto
+  `IBranchContext` (`HeaderBranchContext`), valida contra los claims del token y, para
+  usuarios de una sola sucursal, aplica esa por defecto. **No** se usan parámetros
+  `branchId` en query ni en el cuerpo (alineado en toda la Fase 3, PR #10).
 - Todo caso de uso que lee/escribe datos de sucursal **DEBE filtrar por la sucursal
   activa** y **DEBE validar `DOM-06`**: el empleado del token está habilitado para esa
   sucursal. Si no, `403`.
