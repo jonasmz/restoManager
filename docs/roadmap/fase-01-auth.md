@@ -144,6 +144,14 @@ claim `branch_id` (`DOM-06`), salvo `ADMIN`.
 ## Ramas/PR
 
 1. `feat/fase-01a-auth-api` — Identity, usuarios, login/refresh/logout, JWT + JWKS.
+   **✅ Implementado (PR #3).** Hexágono completo (Domain/Application/Infrastructure/
+   Api), migración `InitialIdentity`, rotación de refresh con detección de reuso,
+   `RS256` + JWKS, `/auth/users` y `/auth/roles` protegidos con `RequireAdmin`,
+   admin de arranque en Development. Tests unitarios de `TokenService`. Verificado de
+   extremo a extremo contra el compose (login → refresh → reuso → 401; alta de
+   usuario; 422/409/401). Tests de integración con Postgres: pendientes (1b/1c).
 2. `feat/fase-01b-business-jwt` — validación en la Business API, `ICurrentUser`,
-   policies base, `/api/v1/me`.
+   policies base, `/api/v1/me`. **Nota:** `branch_id` sale como escalar si hay una
+   sola sucursal y como array si hay varias (comportamiento de `JsonWebTokenHandler`);
+   `ICurrentUser` debe aceptar ambos.
 3. `feat/fase-01c-auth-frontend` — `sign-in`, `AuthService`, interceptor, guards.
