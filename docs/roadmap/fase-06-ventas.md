@@ -21,17 +21,33 @@ El corazón operativo: tomar pedidos, cobrarlos y descontar inventario.
 Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 `gift_card_transactions` se crea aquí; la emisión/saldo de la tarjeta es Fase 8.
 
-### Decisiones bloqueantes
+### Decisiones bloqueantes — RESUELTAS (2026-09-09)
 
-1. **Catálogo `orders.status` y `payments.status`** aprobados (borrador transversal
-   §2). Qué `status` cuentan como **venta efectiva** (MET-01).
-2. **Evento de dominio que dispara el movimiento `SALE`** (§7.5): p. ej. al cerrar el
-   pedido, al marcar "preparado", etc. **Política de reversa** ante cancelación.
-3. Impuestos aditivos vs inclusivos (viene de Fase 4 decisión 1); **redondeo**
-   monetario (medio-arriba, 2 decimales).
-4. `discounts.type` (`PERCENTAGE`/`FIXED_AMOUNT`) y cómo se calcula
-   `order_discounts.applied_amount`; ¿varios descuentos por pedido?
-5. `payments.payment_method` catálogo; ¿propina?
+1. **`orders.status` = `OPEN` → `PAID` → `CLOSED`**; `OPEN`/`PAID` → `CANCELLED`.
+   `PAID` = existe ≥1 `payment` `CONFIRMED` (distingue "cobrado" de "cerrado/
+   archivado"). **Venta efectiva (MET-01) = `status IN (PAID, CLOSED)`.**
+   `payments.status` = borrador transversal (`PENDING`/`CONFIRMED`/`FAILED`/
+   `REFUNDED`); cuenta para métricas `CONFIRMED`.
+2. **El movimiento `SALE` se dispara al registrar el primer `payment` `CONFIRMED`**
+   del pedido (transición `OPEN → PAID`). `PostSaleConsumption` expande recetas,
+   agrupa por ingrediente y postea vía `InventoryLedger` de Fase 3, **idempotente**
+   por `reference_type='ORDER'` + `reference_id = order.id` (DOM-07): pagos
+   posteriores (split) no vuelven a descontar. **Reversa:** si un pedido ya `PAID`
+   se `CANCELLED`, se generan movimientos de reversa (`ADJUSTMENT` opuesto, nunca
+   borrado); los `payments` `CONFIRMED` pasan a `REFUNDED`. Pedidos que nunca
+   llegaron a `PAID` no tocan stock.
+3. Impuestos **inclusivos** en `price` (Fase 4 decisión 1). **Redondeo monetario:
+   medio-arriba (`MidpointRounding.AwayFromZero`), 2 decimales**, aplicado al total
+   de cada línea y al total del pedido.
+4. `discounts.type` = `PERCENTAGE` | `FIXED_AMOUNT`. `order_discounts.applied_amount`
+   se calcula y **congela al aplicar**: `PERCENTAGE` = `round(subtotal * rate/100)`
+   sobre el **subtotal de ítems**; `FIXED_AMOUNT` = el importe fijo (topado al
+   subtotal restante). **Se permiten varios descuentos por pedido**; se suman.
+   `total_amount = subtotal − Σ applied_amount` (impuestos ya incluidos), sin bajar
+   de 0.
+5. `payments.payment_method` = `CASH` | `CARD` | `TRANSFER` | `GIFT_CARD` | `OTHER`
+   (borrador transversal). `GIFT_CARD` genera `gift_card_transactions`. **Sin
+   propina** en Fase 6 (el esquema no tiene columna; se difiere).
 
 ## Backend
 
@@ -98,8 +114,33 @@ Fase 4 (menú, recetas, impuestos) y Fase 5 (mesas/sesiones para canal `MESA`).
 
 ## Ramas/PR (fase grande — cortar en 4)
 
-1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total.
+1. `feat/fase-06a-pedidos` — agregado `Order`, ítems, coherencias de canal, total. **Hecha (PR #16).**
 2. `feat/fase-06b-descuentos-pagos` — descuentos, pagos múltiples, gift card como
    medio de pago.
 3. `feat/fase-06c-consumo-inventario` — `PostSaleConsumption` + reversa.
 4. `feat/fase-06d-pos-frontend` — POS, cuenta, cobro, historial.
+
+### Estado 6a (backend de pedidos)
+
+- Agregado `Order` (`SalesEntities.cs`): enums `OrderChannel`/`OrderStatus` con
+  `ToDbValue`/`FromDbValue`/`TryFromDbValue`; `Order.Create` aplica ORD-06 (canal ↔
+  mesa ↔ sesión); `AddItem`/`UpdateItem`/`RemoveItem` solo con estado `OPEN`;
+  `Recalculate(discountTotal)` con `Money.Round` (medio-arriba, 2 decimales), total
+  ≥ 0. `OrderItem.LineTotal` derivado (no se persiste).
+- `Money` (`Domain/Common/Money.cs`): redondeo monetario único del sistema.
+- Casos de uso (`Application/Sales/Orders/OrderUseCases.cs`): `CreateOrder` (DOM-01/
+  ORD-04 empleado↔sucursal, DOM-01 mesa↔sucursal, DOM-02/ORD-03 sesión↔mesa+abierta,
+  cliente existe), `AddOrderItem` (captura `unit_price` del plato), `UpdateOrderItem`,
+  `RemoveOrderItem`, `ListOrders` (filtros canal/estado/sesión/fecha, paginado),
+  `GetOrder`.
+- Endpoints `/api/v1/orders` (+ `/{id}/items(+/{itemId})`), policy `SalesAccess`
+  (ADMIN, BRANCH_MANAGER, WAITER), sucursal por `X-Branch-Id`.
+- **Sin migración**: enums mapean a los mismos strings/longitudes del DDL; colección
+  hija con `DeleteBehavior.ClientCascade` (FK NO ACTION en BD); `LineTotal` ignorado.
+  `migrations add` en seco → `Up()`/`Down()` vacíos.
+- 15 tests unit nuevos (69 total). Verificado e2e vs compose: ciclo MESA
+  (sesión→pedido→ítems→total 35.50→update 28.50→remove), BARRA/TAKEAWAY/DELIVERY,
+  coherencias (MESA sin mesa 409, no-MESA con mesa/sesión 422, sesión de otra mesa
+  409, empleado de otra sucursal 409), filtros de listado.
+- Pendiente 6b: pagos (`OrderStatus.Paid` al 1er pago `CONFIRMED`), descuentos,
+  `CloseOrder`/`CancelOrder`.
