@@ -16,6 +16,7 @@ export interface NavGroup {
 const INV_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'] as const;
 const MENU_ROLES = ['ADMIN', 'BRANCH_MANAGER'] as const;
 const SALON_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
+const SALES_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -51,6 +52,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Tablero', icon: 'ti-layout-grid', route: '/salon/floor', roles: SALON_ROLES },
       { label: 'Mesas', icon: 'ti-armchair', route: '/salon/tables', roles: SALON_ROLES },
       { label: 'Reservas', icon: 'ti-calendar-event', route: '/salon/reservations', roles: SALON_ROLES },
+    ],
+  },
+  {
+    title: 'Ventas',
+    items: [
+      { label: 'Punto de venta', icon: 'ti-cash-register', route: '/pos', exact: true, roles: SALES_ROLES },
+      { label: 'Pedidos', icon: 'ti-receipt-2', route: '/sales/orders', roles: SALES_ROLES },
+      { label: 'Descuentos', icon: 'ti-discount', route: '/sales/discounts', roles: MENU_ROLES },
     ],
   },
   {

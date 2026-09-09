@@ -7,6 +7,8 @@ const orgRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 const invRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'INVENTORY');
 const menuRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 const salonRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
+const salesRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
+const discountRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 
 /**
  * El shell (Layout) queda tras `authGuard`. Las páginas de módulos se añaden por
@@ -100,6 +102,30 @@ export const routes: Routes = [
         canActivate: [salonRoles],
         loadComponent: () => import('./features/salon/reservations-page').then((m) => m.ReservationsPage),
         title: 'Reservas',
+      },
+      {
+        path: 'pos',
+        canActivate: [salesRoles],
+        loadComponent: () => import('./features/sales/pos-page').then((m) => m.PosPage),
+        title: 'Punto de venta',
+      },
+      {
+        path: 'pos/order/:id',
+        canActivate: [salesRoles],
+        loadComponent: () => import('./features/sales/order-page').then((m) => m.OrderPage),
+        title: 'Pedido',
+      },
+      {
+        path: 'sales/orders',
+        canActivate: [salesRoles],
+        loadComponent: () => import('./features/sales/orders-page').then((m) => m.OrdersPage),
+        title: 'Pedidos',
+      },
+      {
+        path: 'sales/discounts',
+        canActivate: [discountRoles],
+        loadComponent: () => import('./features/sales/discounts-page').then((m) => m.DiscountsPage),
+        title: 'Descuentos',
       },
       {
         path: 'reports',
