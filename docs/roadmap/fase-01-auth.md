@@ -160,3 +160,11 @@ claim `branch_id` (`DOM-06`), salvo `ADMIN`.
    sean coherentes y alcanzables. 5 tests unitarios; verificado 401/200/403 de
    extremo a extremo.
 3. `feat/fase-01c-auth-frontend` — `sign-in`, `AuthService`, interceptor, guards.
+   **✅ Implementado (PR #5, apilado sobre 1b).** `core/auth/` (jwt decode,
+   `TokenStorage` en localStorage, `AuthService` con señal `currentUser`, `authGuard`),
+   `authInterceptor` (bearer + cola de renovación ante 401 + redirección al fallar),
+   `sign-in` (reactive form, portado de `signin.html`), shell tras `authGuard`,
+   sidebar filtrado por rol, dropdown de usuario con email/roles + "Cerrar sesión".
+   Placeholder `sign-up` de Fase 0 eliminado. Verificado en navegador de extremo a
+   extremo (guard, login, shell, logout, credenciales inválidas; sin errores de
+   consola).

@@ -1,12 +1,16 @@
 import { Routes } from '@angular/router';
 
+import { authGuard } from './core/auth/auth.guard';
+
 /**
- * Rutas de Fase 0: shell del template (Layout) con páginas placeholder.
- * Las rutas reales de cada módulo se añaden en su fase del roadmap.
+ * El shell (Layout) queda tras `authGuard`. Las páginas siguen siendo placeholder
+ * hasta su fase del roadmap. El registro es solo por administrador (Fase 2), por eso
+ * no hay ruta de alta pública.
  */
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () => import('./layout/layout').then((m) => m.Layout),
     children: [
       {
@@ -30,11 +34,6 @@ export const routes: Routes = [
     path: 'auth/signin',
     loadComponent: () => import('./features/auth/sign-in').then((m) => m.SignIn),
     title: 'Iniciar sesión',
-  },
-  {
-    path: 'auth/signup',
-    loadComponent: () => import('./features/auth/sign-up').then((m) => m.SignUp),
-    title: 'Registro',
   },
   {
     path: '**',
