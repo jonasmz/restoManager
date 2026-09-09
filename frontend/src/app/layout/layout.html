@@ -1,0 +1,125 @@
+@let isCollapsed = layout.collapsed();
+@let isMobileOpen = layout.mobileOpen();
+
+<!-- OVERLAY (móvil) -->
+<div
+  class="overlay"
+  [class.show]="isMobileOpen"
+  role="button"
+  tabindex="0"
+  aria-label="Cerrar menú"
+  (click)="layout.closeMobile()"
+  (keydown.enter)="layout.closeMobile()"
+  (keydown.space)="layout.closeMobile()"
+></div>
+
+<!-- TOPBAR -->
+<nav class="navbar bg-white border-bottom fixed-top topbar px-3" [class.full]="isCollapsed">
+  <button
+    type="button"
+    class="d-none d-lg-inline-flex btn btn-light btn-icon btn-sm"
+    aria-label="Contraer menú"
+    (click)="layout.toggleCollapsed()"
+  >
+    <i class="ti ti-layout-sidebar-left-expand"></i>
+  </button>
+
+  <button
+    type="button"
+    class="btn btn-light btn-icon btn-sm d-lg-none me-2"
+    aria-label="Abrir menú"
+    (click)="layout.openMobile()"
+  >
+    <i class="ti ti-layout-sidebar-left-expand"></i>
+  </button>
+
+  <ul class="list-unstyled d-flex align-items-center mb-0 gap-1">
+    <li class="dropdown">
+      <a
+        class="position-relative btn-icon btn-sm btn-light btn rounded-circle"
+        data-bs-toggle="dropdown"
+        role="button"
+        aria-expanded="false"
+        href="#"
+      >
+        <i class="ti ti-bell"></i>
+        <span
+          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger mt-2 ms-n2"
+        >
+          2
+          <span class="visually-hidden">notificaciones sin leer</span>
+        </span>
+      </a>
+      <div class="dropdown-menu dropdown-menu-end p-0" style="min-width: 20rem">
+        <div class="p-3 border-bottom small text-secondary">Sin notificaciones nuevas</div>
+        <a href="#" class="d-block px-4 py-3 text-center text-primary small">Ver todas</a>
+      </div>
+    </li>
+
+    <li class="ms-3 dropdown">
+      <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <img src="assets/images/avatar/avatar-1.jpg" alt="Cuenta" class="avatar avatar-sm rounded-circle" />
+      </a>
+      <div class="dropdown-menu dropdown-menu-end p-0" style="min-width: 12rem">
+        <div class="d-flex gap-3 align-items-center border-dashed border-bottom px-3 py-3">
+          <img src="assets/images/avatar/avatar-1.jpg" alt="" class="avatar avatar-md rounded-circle" />
+          <div>
+            <h4 class="mb-0 small">Usuario</h4>
+            <p class="mb-0 small text-secondary">Sesión no iniciada</p>
+          </div>
+        </div>
+        <div class="p-3 d-flex flex-column gap-1 small lh-lg">
+          <a routerLink="/auth/signin">Iniciar sesión</a>
+        </div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" [class.collapsed]="isCollapsed" [class.mobile-show]="isMobileOpen">
+  <div class="logo-area">
+    <a routerLink="/" class="d-inline-flex align-items-center" (click)="layout.closeMobile()">
+      <img src="assets/images/logo-icon.svg" alt="Resto Manager" width="24" />
+      <span class="logo-text ms-2"><img src="assets/images/logo.svg" alt="" /></span>
+    </a>
+  </div>
+
+  <ul class="nav flex-column">
+    @for (group of navGroups; track group.title) {
+      <li class="px-4 pt-4 pb-2"><small class="nav-text text-uppercase text-secondary">{{ group.title }}</small></li>
+      @for (item of group.items; track item.route) {
+        <li>
+          <a
+            class="nav-link"
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: !!item.exact }"
+            (click)="layout.closeMobile()"
+          >
+            <i [class]="'ti ' + item.icon"></i>
+            <span class="nav-text">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    }
+  </ul>
+</aside>
+
+<!-- CONTENIDO -->
+<main class="content py-10" [class.full]="isCollapsed">
+  <div class="container-fluid">
+    <router-outlet />
+
+    <div class="row">
+      <div class="col-12">
+        <footer class="text-center py-2 mt-6 text-secondary">
+          <p class="mb-0 small">
+            Resto Manager — diseño basado en la plantilla InApp de
+            <a href="https://codescandy.com/" target="_blank" rel="noopener" class="text-primary">CodesCandy</a>.
+          </p>
+        </footer>
+      </div>
+    </div>
+  </div>
+</main>

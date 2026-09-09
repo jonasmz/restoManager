@@ -1,0 +1,17 @@
+/* Estilos globales — portados fielmente del template requirements/inapp/.
+   Orden equivalente a requirements/inapp/src/assets/scss/style.scss. */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+// Funciones de Bootstrap (necesarias antes de los overrides)
+@import 'bootstrap/scss/functions';
+
+// Overrides de variables del template
+@import './styles/variables';
+
+// Bootstrap
+@import 'bootstrap/scss/bootstrap';
+
+// Estilos personalizados del template (shell: sidebar, topbar, overlay, ...)
+// _custom.scss importa a su vez avatar / button / icon-shape / utilities.
+@import './styles/custom';

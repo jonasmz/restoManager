@@ -60,36 +60,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 - En desarrollo, dentro de la red de Docker, `Authority` apunta al nombre de
   servicio `backend-auth`.
 
+## Decisiones (resueltas 2026-09-08)
+
+| Tema | Decisión |
+|---|---|
+| Firma | **RSA 2048**, JWT con `kid`. Dos claves activas a la vez (actual + siguiente) publicadas en el JWKS para rotar sin downtime. Clave privada como secreto montado, nunca en el repo. |
+| Vida de tokens | **Access 15 min · refresh 14 días, de un solo uso (rotación).** Reusar un refresh ya consumido revoca toda la cadena de esa sesión. |
+| Storage en el frontend | **`localStorage`** (access y refresh). Sin cookies ni CSRF. Riesgo XSS aceptado para herramienta interna; se mitiga con access token corto + CSP. |
+| Registro | **No hay `/auth/register` público.** Alta de usuarios **solo por `ADMIN`/`BRANCH_MANAGER`**, siempre vinculada a una fila de `employees`. |
+| Roles | **5 fijos**: `ADMIN`, `BRANCH_MANAGER`, `WAITER`, `KITCHEN`, `INVENTORY`. Sin CRUD de roles en esta versión. |
+
 ## Autorización
 
-- **Roles**: los del dominio (`roles` en `resto_business`). El nombre concreto de
-  cada rol y **qué puede hacer cada uno** (matriz de permisos) **no está en el
-  spec** (`roles` solo tiene `name`, `description`, `hourly_rate`) → se **consulta
-  al usuario** antes de implementar cualquier regla de autorización.
-- Se usa autorización basada en **policies** (`AddAuthorization(o => o.AddPolicy(...))`)
-  más que `[Authorize(Roles="...")]` disperso, para tener las reglas en un solo sitio.
+- **Roles en el token**: claim `role` (uno o varios) con los 5 valores fijos. La
+  matriz permiso×área (borrador) está en
+  [`roadmap/fase-01-auth.md`](roadmap/fase-01-auth.md); cada fase añade sus policies
+  siguiéndola.
+- Autorización basada en **policies** (`AddAuthorization(o => o.AddPolicy(...))`) más
+  que `[Authorize(Roles="...")]` disperso, para tener las reglas en un solo sitio.
 - **`DOM-06`**: el empleado debe estar habilitado para la sucursal sobre la que
-  opera. Esto se comprueba en `Application` combinando el claim `branch_id`/
+  opera. Se comprueba en `Application` combinando los claims `branch_id` /
   `employee_id` del token con los datos de `employees` — no basta con el rol.
 
 ## Flujo con el frontend
 
 1. `POST /auth/login` → `{ accessToken, refreshToken, expiresIn }`.
-2. El frontend guarda los tokens (mecanismo por decidir: `localStorage` vs cookie
-   `httpOnly` — **pregunta abierta**, ver abajo) y adjunta
-   `Authorization: Bearer <accessToken>` en cada llamada a la Business API mediante
-   un **HTTP interceptor** de Angular.
-3. Ante un `401`, el interceptor intenta `POST /auth/refresh` una vez; si falla,
-   redirige a `signin`.
-4. `signin.html` / `signup.html` del template `requirements/inapp/` son el referente
-   visual de las pantallas de login/registro.
-
-## Preguntas abiertas (consultar antes de implementar)
-
-- Vida exacta del access token y del refresh token.
-- ¿Rotación de refresh tokens (single-use) y detección de reuso?
-- ¿Los tokens se guardan en `localStorage` o en cookie `httpOnly` + CSRF?
-- ¿Registro público (`/auth/register` abierto) o solo alta de usuarios por un
-  administrador?
-- Algoritmo de firma concreto (RSA vs ECDSA) y tamaño.
-- Catálogo de roles y matriz de permisos por endpoint/módulo.
+2. El frontend guarda ambos tokens en `localStorage` (`rm.access` / `rm.refresh`) y
+   adjunta `Authorization: Bearer <accessToken>` en cada llamada a la Business API
+   mediante un **HTTP interceptor** de Angular.
+3. Ante un `401`, el interceptor llama a `POST /auth/refresh` **una sola vez** (con
+   cola de peticiones en espera), rota el par de tokens y reintenta; si falla, limpia
+   el storage y redirige a `/auth/signin`.
+4. `signin.html` del template `requirements/inapp/` es el referente visual del login.
+   No hay pantalla de registro (el alta de usuarios vive en la administración, Fase 2).

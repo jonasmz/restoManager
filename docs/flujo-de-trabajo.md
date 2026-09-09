@@ -8,12 +8,15 @@ Pensado para ejecutarse en orden.
 Antes de escribir código:
 
 1. Lee [`../AGENTS.md`](../AGENTS.md) (reglas de oro).
-2. Abre el/los documento(s) de `docs/` de la capa que vas a tocar:
+2. Identifica **qué fase del roadmap** cubre la tarea: abre [`roadmap.md`](roadmap.md),
+   luego `roadmap/fase-XX-*.md` de esa fase y [`roadmap/transversales.md`](roadmap/transversales.md).
+   Resuelve con el usuario las "decisiones bloqueantes" de la fase antes de implementar.
+3. Abre el/los documento(s) de `docs/` de la capa que vas a tocar:
    - Cambio en API/dominio/persistencia → [`backend.md`](backend.md) y, si toca
      usuarios/roles/tokens, [`auth.md`](auth.md).
    - Cambio en la interfaz → [`frontend.md`](frontend.md).
    - Cambio en contenedores/orquestación → [`docker.md`](docker.md).
-3. Lee la sección relevante del dominio en `requirements/`:
+4. Lee la sección relevante del dominio en `requirements/`:
    - `requirements/restaurant_schema_specifications.md` — reglas funcionales, con
      identificadores normativos (`CUS-01`, `TBL-02`, `ORD-06`, `INV-05`, `DOM-07`…).
    - `requirements/restaurant_schema.sql` — DDL real (tablas, CHECKs, índice único
