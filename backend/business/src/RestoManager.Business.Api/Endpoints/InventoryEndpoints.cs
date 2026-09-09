@@ -14,9 +14,9 @@ public static class InventoryEndpoints
 
         // ---- Ingredientes (catálogo) ----
         group.MapGet("/ingredients", async (
-            string? search, int page, int pageSize, ListIngredientsHandler handler, CancellationToken ct) =>
+            string? search, int? page, int? pageSize, ListIngredientsHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(
-                new ListIngredientsQuery(search, page <= 0 ? 1 : page, pageSize <= 0 ? 20 : pageSize), ct)));
+                new ListIngredientsQuery(search, page ?? 1, pageSize ?? 20), ct)));
 
         group.MapGet("/ingredients/{id:int}", async (int id, GetIngredientHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(id, ct)));

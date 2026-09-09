@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Inventory;
+using RestoManager.Business.Domain.Organization;
 using RestoManager.Business.Domain.Purchasing;
 using RestoManager.Business.Infrastructure.Persistence;
 using RestoManager.Business.Infrastructure.Persistence.Repositories;
@@ -31,6 +32,14 @@ public static class DependencyInjection
         services.AddScoped<IWasteLogRepository, WasteLogRepository>();
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+
+        services.AddScoped<IRestaurantRepository, RestaurantRepository>();
+        services.AddScoped<IBranchRepository, BranchRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<IShiftRepository, ShiftRepository>();
+        services.AddScoped<IEmployeeLeaveRepository, EmployeeLeaveRepository>();
 
         return services;
     }

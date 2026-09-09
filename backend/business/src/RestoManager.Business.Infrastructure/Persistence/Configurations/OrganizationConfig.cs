@@ -76,7 +76,10 @@ internal sealed class EmployeeLeaveConfig : IEntityTypeConfiguration<EmployeeLea
     public void Configure(EntityTypeBuilder<EmployeeLeave> b)
     {
         b.Property(x => x.LeaveType).HasMaxLength(50).IsRequired();
-        b.Property(x => x.Status).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Status)
+            .HasConversion(v => LeaveCatalog.StatusToDb(v), v => LeaveCatalog.StatusFromDb(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Fk<EmployeeLeave, Employee>(nameof(EmployeeLeave.EmployeeId));
     }
 }
