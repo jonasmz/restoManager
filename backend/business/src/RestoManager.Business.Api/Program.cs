@@ -16,6 +16,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddScoped<IBranchContext, HeaderBranchContext>();
 builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 
 builder.Services.AddBusinessApplication();
@@ -40,7 +41,9 @@ if (authEnabled)
 
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("RequireAdmin", policy => policy.RequireRole("ADMIN"))
-        .AddPolicy("InventoryAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "INVENTORY"));
+        .AddPolicy("InventoryAccess", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER", "INVENTORY"))
+        .AddPolicy("OrgAdmin", policy => policy.RequireRole("ADMIN"))
+        .AddPolicy("OrgStaff", policy => policy.RequireRole("ADMIN", "BRANCH_MANAGER"));
 }
 
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
@@ -72,6 +75,7 @@ app.MapGet("/", () => Results.Ok(new { service = "RestoManager.Business.Api", st
 if (authEnabled)
 {
     app.MapMeEndpoints();
+    app.MapOrganizationEndpoints();
     app.MapInventoryEndpoints();
     app.MapPurchasingEndpoints();
 }

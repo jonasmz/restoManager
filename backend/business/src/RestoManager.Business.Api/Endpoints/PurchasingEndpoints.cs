@@ -12,9 +12,9 @@ public static class PurchasingEndpoints
 
         // ---- Proveedores ----
         group.MapGet("/suppliers", async (
-            string? search, int page, int pageSize, ListSuppliersHandler handler, CancellationToken ct) =>
+            string? search, int? page, int? pageSize, ListSuppliersHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(
-                new ListSuppliersQuery(search, page <= 0 ? 1 : page, pageSize <= 0 ? 20 : pageSize), ct)));
+                new ListSuppliersQuery(search, page ?? 1, pageSize ?? 20), ct)));
 
         group.MapGet("/suppliers/{id:int}", async (int id, GetSupplierHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(id, ct)));
@@ -36,10 +36,10 @@ public static class PurchasingEndpoints
 
         // ---- Órdenes de compra ----
         group.MapGet("/purchase-orders", async (
-            int? branchId, string? status, int page, int pageSize,
+            int? branchId, string? status, int? page, int? pageSize,
             ListPurchaseOrdersHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(
-                new ListPurchaseOrdersQuery(branchId, status, page <= 0 ? 1 : page, pageSize <= 0 ? 20 : pageSize), ct)));
+                new ListPurchaseOrdersQuery(branchId, status, page ?? 1, pageSize ?? 20), ct)));
 
         group.MapGet("/purchase-orders/{id:int}", async (
             int id, GetPurchaseOrderHandler handler, CancellationToken ct) =>

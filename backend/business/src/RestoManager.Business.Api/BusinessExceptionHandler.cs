@@ -25,6 +25,8 @@ public sealed class BusinessExceptionHandler(IProblemDetailsService problemDetai
                 }),
             BusinessException b => (
                 b.StatusCode, b.Message, b.Code, new Dictionary<string, object?>()),
+            BadHttpRequestException => (
+                StatusCodes.Status400BadRequest, "Solicitud mal formada.", "bad_request", new Dictionary<string, object?>()),
             _ => (0, string.Empty, string.Empty, new Dictionary<string, object?>()),
         };
 

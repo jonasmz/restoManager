@@ -85,7 +85,17 @@ Pantallas de administración (patrón tabla + formulario del template):
 
 ## Ramas/PR (fase grande — cortar en 3)
 
-1. `feat/fase-02a-baseline-migracion` — migración baseline + entidades + repos + seed
-   vacío.
-2. `feat/fase-02b-org-backend` — casos de uso, endpoints, `BranchAccessPolicy`, seed.
+1. `feat/fase-02a-baseline-migracion` — migración baseline + entidades + repos.
+   **✅ Hecho** (dentro del PR #7 de Fase 3).
+2. `feat/fase-02b-org-backend` — casos de uso, endpoints, branch scoping, seed.
+   **✅ Hecho (PR #8).** Entidades con comportamiento; CRUD de las 7 entidades
+   (restaurants/roles globales; branches; departments/employees/shifts/leaves por
+   sucursal activa); `IBranchContext` (header **`X-Branch-Id`**, validado contra el
+   token; si el usuario tiene una sola sucursal se asume esa); policies `OrgAdmin`
+   (ADMIN) y `OrgStaff` (ADMIN/BRANCH_MANAGER); transiciones de ausencias
+   (REQUESTED→APPROVED/REJECTED, *→CANCELLED); `BusinessDevSeeder` con 1 empresa,
+   2 sucursales, 5 puestos y empleados demo (el empleado id=1 = claim del admin).
+   Verificado de extremo a extremo. `employee_leaves.status`/`leave_type` fijados
+   (`VACATION`/`SICK`/`UNPAID`/`OTHER`).
 3. `feat/fase-02c-org-frontend` — selector de sucursal + pantallas de administración.
+   **Pendiente.**
