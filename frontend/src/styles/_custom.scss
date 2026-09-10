@@ -63,8 +63,40 @@
     border-bottom: 1px solid $gray-200;
 	}
 }
+// Grupos plegables + scroll del menú lateral (Fase UX): el shell tenía muchos
+// grupos y los últimos quedaban fuera de la ventana.
+.sidebar-nav {
+	height: calc(100vh - 60px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+
+	&::-webkit-scrollbar { width: 6px; }
+	&::-webkit-scrollbar-thumb { background: $gray-300; border-radius: 3px; }
+}
+
+.sidebar-group-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	background: none;
+	border: 0;
+	padding: 14px 24px 6px;
+	cursor: pointer;
+
+	small { letter-spacing: .04em; transition: color .15s; }
+	.ti { font-size: 14px; color: $gray-500; }
+	&:hover small,
+	&:hover .ti { color: $gray-700; }
+}
+
 .sidebar.collapsed {
 	width: 60px;
+
+	.sidebar-group-toggle { display: none; }
+	.sidebar-group + .sidebar-group { border-top: 1px solid $gray-200; }
 	.nav-link{
 		margin: 0 0px;
 		background-color: transparent;
