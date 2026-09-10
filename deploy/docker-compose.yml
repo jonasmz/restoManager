@@ -60,12 +60,15 @@ services:
       ConnectionStrings__BusinessDb: "Host=postgres;Port=5432;Database=resto_business;Username=${POSTGRES_USER:-resto};Password=${POSTGRES_PASSWORD:-resto}"
       Auth__Authority: "http://backend-auth:8080"
       Auth__Audience: "resto"
+      # Fase 11: almacén de imágenes de la carta (servidas en /media/menu).
+      Storage__MenuImagesPath: "/var/lib/resto/menu-images"
     command: ["bash", "-lc", "dotnet restore && dotnet watch run --project src/RestoManager.Business.Api --non-interactive --no-launch-profile"]
     volumes:
       - ../backend/business:/src
       - business_nuget:/root/.nuget/packages
       - business_obj:/src/src/RestoManager.Business.Api/obj
       - business_bin:/src/src/RestoManager.Business.Api/bin
+      - menu_images:/var/lib/resto/menu-images
     ports:
       - "5002:8080"
     depends_on:
@@ -104,4 +107,5 @@ volumes:
   business_nuget:
   business_obj:
   business_bin:
+  menu_images:
   frontend_node_modules:

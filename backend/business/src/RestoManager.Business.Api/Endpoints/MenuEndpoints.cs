@@ -49,6 +49,23 @@ public static class MenuEndpoints
         menu.MapGet("/menu-items/{id:int}/cost", async (int id, GetMenuItemCostHandler h, CancellationToken ct) =>
             Results.Ok(await h.HandleAsync(id, ct)));
 
+        // Imagen ilustrativa del plato (Fase 11). multipart/form-data, campo "file".
+        menu.MapPut("/menu-items/{id:int}/image", async (
+            int id, IFormFile file, SetMenuItemImageHandler h, CancellationToken ct) =>
+        {
+            await using var stream = file.OpenReadStream();
+            var result = await h.HandleAsync(
+                new SetMenuItemImageCommand(id, stream, file.ContentType ?? string.Empty, file.Length), ct);
+            return Results.Ok(result);
+        }).DisableAntiforgery();
+
+        menu.MapDelete("/menu-items/{id:int}/image", async (
+            int id, ClearMenuItemImageHandler h, CancellationToken ct) =>
+        {
+            await h.HandleAsync(id, ct);
+            return Results.NoContent();
+        });
+
         menu.MapPost("/menu-items", async (SaveMenuItemRequest b, SaveMenuItemHandler h, CancellationToken ct) =>
         {
             var id = await h.HandleAsync(ToCommand(null, b), ct);

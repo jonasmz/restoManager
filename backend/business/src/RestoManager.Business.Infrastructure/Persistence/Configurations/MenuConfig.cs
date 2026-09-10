@@ -22,6 +22,7 @@ internal sealed class MenuItemConfig : IEntityTypeConfiguration<MenuItem>
         b.Property(x => x.Name).HasMaxLength(100).IsRequired();
         b.Property(x => x.Description).HasMaxLength(255).IsRequired();
         b.Property(x => x.Price).Money();
+        b.Property(x => x.ImageKey).HasMaxLength(200); // Fase 11: nullable, sin imagen por defecto
         b.Fk<MenuItem, Category>(nameof(MenuItem.CategoryId));
 
         b.HasMany(x => x.Recipe)

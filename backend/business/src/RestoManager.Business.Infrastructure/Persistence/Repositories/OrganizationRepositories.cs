@@ -24,6 +24,9 @@ public sealed class BranchRepository(BusinessDbContext db) : IBranchRepository
     public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
         => db.Branches.AnyAsync(x => x.Id == id, ct);
 
+    public Task<Branch?> GetByPublicSlugAsync(string slug, CancellationToken ct = default)
+        => db.Branches.FirstOrDefaultAsync(x => x.PublicSlug == slug, ct);
+
     public async Task<IReadOnlyList<Branch>> ListAsync(int? restaurantId, int skip, int take, CancellationToken ct = default)
         => await Filter(restaurantId).OrderBy(x => x.Name).Skip(skip).Take(take).ToListAsync(ct);
 

@@ -24,6 +24,8 @@ internal sealed class BranchConfig : IEntityTypeConfiguration<Branch>
         b.Property(x => x.Address).HasMaxLength(255).IsRequired();
         b.Property(x => x.Phone).HasMaxLength(20).IsRequired();
         b.Property(x => x.Email).HasMaxLength(100).IsRequired();
+        b.Property(x => x.PublicSlug).HasMaxLength(60); // Fase 11: nullable
+        b.HasIndex(x => x.PublicSlug).IsUnique(); // Postgres: varios NULL conviven
         b.Fk<Branch, Restaurant>(nameof(Branch.RestaurantId));
     }
 }

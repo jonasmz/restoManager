@@ -25,6 +25,10 @@ Notas de diseño:
 - **Código montado como volumen** (`./backend/business:/src`, `./frontend:/app`) para
   hot-reload. Las carpetas pesadas se excluyen con volúmenes anónimos
   (`/src/**/bin`, `/src/**/obj`, `/app/node_modules`).
+- **`backend-business`**: volumen con nombre `menu_images` montado en
+  `/var/lib/resto/menu-images` (variable `Storage__MenuImagesPath`). Guarda las
+  imágenes de la carta (Fase 11); la API las sirve como estáticos en `/media/menu`.
+  Sin la variable, la API cae a `ContentRoot/media/menu` (útil fuera de Docker).
 - Imágenes de **desarrollo basadas en el SDK**; los `Dockerfile` de producción
   (multi-stage, runtime-only) se harán aparte.
 - Red única de compose; los servicios se referencian por nombre

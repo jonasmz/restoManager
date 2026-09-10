@@ -12,7 +12,19 @@ public sealed record RecipeLineDto(int IngredientId, decimal QuantityRequired);
 
 public sealed record MenuItemDto(
     int Id, int CategoryId, string Name, string Description, decimal Price, bool IsAvailable,
-    IReadOnlyList<RecipeLineDto> Recipe, IReadOnlyList<int> TaxRateIds);
+    IReadOnlyList<RecipeLineDto> Recipe, IReadOnlyList<int> TaxRateIds, string? ImageUrl);
+
+/// <summary>
+/// Traduce la clave de imagen de un plato (<see cref="Domain.Menu.MenuItem.ImageKey"/>) a
+/// la ruta pública servida por la API (<c>/media/menu/&lt;clave&gt;</c>). El frontend le
+/// antepone la base de la API. Fase 11.
+/// </summary>
+public static class MenuImagePath
+{
+    public const string Prefix = "/media/menu";
+
+    public static string? For(string? key) => string.IsNullOrEmpty(key) ? null : $"{Prefix}/{key}";
+}
 
 public sealed record RecipeCostLineDto(
     int IngredientId, string IngredientName, decimal QuantityRequired, decimal UnitPrice, decimal LineCost);
@@ -116,7 +128,8 @@ public sealed class ListMenuItemsHandler(IMenuItemRepository menuItems)
     internal static MenuItemDto Map(MenuItem m) => new(
         m.Id, m.CategoryId, m.Name, m.Description, m.Price, m.IsAvailable,
         m.Recipe.Select(r => new RecipeLineDto(r.IngredientId, r.QuantityRequired)).ToList(),
-        m.Taxes.Select(t => t.TaxRateId).ToList());
+        m.Taxes.Select(t => t.TaxRateId).ToList(),
+        MenuImagePath.For(m.ImageKey));
 }
 
 public sealed class GetMenuItemHandler(IMenuItemRepository menuItems)
