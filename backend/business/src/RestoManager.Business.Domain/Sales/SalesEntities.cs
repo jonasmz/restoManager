@@ -369,9 +369,25 @@ public sealed class Order
 
     // ---- Ítems ----
 
+    /// <summary>
+    /// Agrega un plato al pedido. Si ya existe una línea con el <b>mismo plato y la misma
+    /// nota</b>, incrementa su cantidad en lugar de crear una segunda línea (el precio
+    /// unitario de esa línea se mantiene, capturado al primer agregado). Distinta nota =
+    /// línea aparte.
+    /// </summary>
     public OrderItem AddItem(int menuItemId, int quantity, decimal unitPrice, string? notes)
     {
         EnsureOpen("agregar ítems");
+
+        var normalizedNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        var existing = _items.FirstOrDefault(i => i.MenuItemId == menuItemId && i.Notes == normalizedNotes);
+        if (existing is not null)
+        {
+            existing.Update(existing.Quantity + quantity, existing.Notes);
+            Recalculate();
+            return existing;
+        }
+
         var item = OrderItem.Create(menuItemId, quantity, unitPrice, notes);
         _items.Add(item);
         Recalculate();
