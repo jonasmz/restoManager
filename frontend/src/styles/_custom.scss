@@ -71,6 +71,7 @@
 	overflow-x: hidden;
 	overscroll-behavior: contain;
 	scrollbar-width: thin;
+	padding-bottom: 1rem; // que el último grupo no quede pegado al borde inferior
 
 	&::-webkit-scrollbar { width: 6px; }
 	&::-webkit-scrollbar-thumb { background: $gray-300; border-radius: 3px; }
