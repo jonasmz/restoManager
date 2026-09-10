@@ -69,4 +69,16 @@ export class ReportsApiService {
   tableTurnover(r: DateRange): Observable<TableTurnover[]> {
     return this.http.get<TableTurnover[]>(`${this.base}/tables/turnover`, { params: this.range(r) });
   }
+
+  /**
+   * Descarga el PDF de un reporte (Fase 10). `path` es el segmento tras `/reports`
+   * y termina en `/pdf` (p. ej. `dashboard/pdf`, `sales/pdf`).
+   */
+  pdf(path: string, r: DateRange, extra: Record<string, string | number> = {}): Observable<Blob> {
+    let params = this.range(r);
+    for (const [k, v] of Object.entries(extra)) {
+      params = params.set(k, v);
+    }
+    return this.http.get(`${this.base}/${path}`, { params, responseType: 'blob' });
+  }
 }

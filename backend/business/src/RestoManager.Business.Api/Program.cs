@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using RestoManager.Business.Api;
 using RestoManager.Business.Api.Auth;
 using RestoManager.Business.Api.Endpoints;
+using RestoManager.Business.Api.Reports;
+using RestoManager.Business.Application.Reports;
 using RestoManager.Business.Application;
 using RestoManager.Business.Application.Abstractions;
 using RestoManager.Business.Infrastructure;
 using RestoManager.Business.Infrastructure.Persistence;
+
+QuestPDF.Settings.License = LicenseType.Community; // Fase 10: PDF de reportes.
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +26,7 @@ builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 
 builder.Services.AddBusinessApplication();
 builder.Services.AddBusinessInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<IReportRenderer, QuestPdfReportRenderer>();
 
 // Validación del JWT emitido por la Auth API (descubrimiento OIDC + JWKS).
 var authority = builder.Configuration["Auth:Authority"];
@@ -90,6 +96,7 @@ if (authEnabled)
     app.MapDeliveryEndpoints();
     app.MapCustomerEndpoints();
     app.MapReportEndpoints();
+    app.MapReportPdfEndpoints();
 }
 
 await using (var scope = app.Services.CreateAsyncScope())

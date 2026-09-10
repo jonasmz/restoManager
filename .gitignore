@@ -52,3 +52,4 @@ Thumbs.db
 
 # Claves de firma generadas en desarrollo
 keys/
+/requirements/*.pdf

@@ -5,7 +5,10 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { firstValueFrom } from 'rxjs';
+
 import { BranchContextService } from '../../core/branch/branch-context.service';
+import { triggerDownload } from '../../core/export/table-export';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { barChart, CHART_COLORS } from '../reports/chart-theme';
 import { ReportsApiService } from '../reports/reports-api.service';
@@ -30,10 +33,16 @@ const RANGES = [
           Ventas efectivas (pagadas o cerradas).
         </p>
       </div>
-      <div class="btn-group btn-group-sm">
-        @for (r of ranges; track r.days) {
-          <button type="button" class="btn" [class]="range().days === r.days ? 'btn-primary' : 'btn-outline-primary'"
-            (click)="setRange(r)">{{ r.label }}</button>
+      <div class="d-flex gap-2">
+        <div class="btn-group btn-group-sm">
+          @for (r of ranges; track r.days) {
+            <button type="button" class="btn" [class]="range().days === r.days ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="setRange(r)">{{ r.label }}</button>
+          }
+        </div>
+        @if (!restricted()) {
+          <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="downloadingPdf()"
+            (click)="downloadPdf()"><i class="ti ti-file-type-pdf me-1"></i>PDF</button>
         }
       </div>
     </div>
@@ -176,6 +185,7 @@ export class Dashboard {
   protected readonly data = signal<DashboardPayload | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly restricted = signal(false);
+  protected readonly downloadingPdf = signal(false);
 
   protected readonly donutColors = [
     CHART_COLORS.sales, CHART_COLORS.green, '#3b82f6', CHART_COLORS.greenDark, '#f59e0b',
@@ -206,6 +216,24 @@ export class Dashboard {
     this.load();
   }
 
+  protected async downloadPdf(): Promise<void> {
+    this.downloadingPdf.set(true);
+    try {
+      const { from, to } = this.currentRange();
+      const blob = await firstValueFrom(this.api.pdf('dashboard/pdf', { from, to }));
+      triggerDownload(blob, `panel-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      this.downloadingPdf.set(false);
+    }
+  }
+
+  private currentRange(): { from: string; to: string } {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - this.range().days);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+
   protected channelLabel(c: string): string {
     return CHANNEL_LABELS[c] ?? c;
   }
@@ -216,11 +244,8 @@ export class Dashboard {
   }
 
   private load(): void {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - this.range().days);
     this.error.set(null);
-    this.api.dashboard({ from: from.toISOString(), to: to.toISOString() }).subscribe({
+    this.api.dashboard(this.currentRange()).subscribe({
       next: (d) => {
         this.restricted.set(false);
         this.data.set(d);
