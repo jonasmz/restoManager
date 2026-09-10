@@ -44,6 +44,7 @@ internal sealed class RecipeItemConfig : IEntityTypeConfiguration<RecipeItem>
     public void Configure(EntityTypeBuilder<RecipeItem> b)
     {
         b.Property(x => x.QuantityRequired).Money();
+        b.Property(x => x.IsPublic).HasDefaultValue(true); // issue #34: visible en la carta pública
         b.HasIndex(x => new { x.MenuItemId, x.IngredientId }).IsUnique();
         b.Fk<RecipeItem, Ingredient>(nameof(RecipeItem.IngredientId));
     }

@@ -141,6 +141,6 @@ public static class MenuEndpoints
 
     private static SaveMenuItemCommand ToCommand(int? id, SaveMenuItemRequest b) => new(
         id, b.CategoryId, b.Name, b.Description, b.Price, b.IsAvailable,
-        b.Recipe?.Select(r => new RecipeLineDto(r.IngredientId, r.QuantityRequired)).ToList(),
+        b.Recipe?.Select(r => new RecipeLineDto(r.IngredientId, r.QuantityRequired, r.IsPublic)).ToList(),
         b.TaxRateIds);
 }

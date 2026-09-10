@@ -105,9 +105,10 @@ public sealed class MenuItem
 
     /// <summary>
     /// Reemplaza toda la receta. Rechaza ingredientes repetidos (§7.5,
-    /// <c>UNIQUE(menu_item_id, ingredient_id)</c>) y cantidades ≤ 0.
+    /// <c>UNIQUE(menu_item_id, ingredient_id)</c>) y cantidades ≤ 0. <c>isPublic</c>
+    /// controla si el ingrediente se muestra en la carta pública (issue #34).
     /// </summary>
-    public void SetRecipe(IEnumerable<(int ingredientId, decimal quantityRequired)> lines)
+    public void SetRecipe(IEnumerable<(int ingredientId, decimal quantityRequired, bool isPublic)> lines)
     {
         var incoming = lines.ToList();
         var duplicated = incoming.GroupBy(l => l.ingredientId).FirstOrDefault(g => g.Count() > 1);
@@ -119,9 +120,9 @@ public sealed class MenuItem
         }
 
         _recipe.Clear();
-        foreach (var (ingredientId, quantity) in incoming)
+        foreach (var (ingredientId, quantity, isPublic) in incoming)
         {
-            _recipe.Add(RecipeItem.Create(ingredientId, quantity));
+            _recipe.Add(RecipeItem.Create(ingredientId, quantity, isPublic));
         }
     }
 
@@ -155,9 +156,15 @@ public sealed class RecipeItem
     public int IngredientId { get; private set; }
     public decimal QuantityRequired { get; private set; }
 
+    /// <summary>
+    /// Si el nombre del ingrediente se muestra en la carta pública (Fase 11 / issue #34).
+    /// Por defecto <c>true</c>: al no marcar nada, la receta se ve completa.
+    /// </summary>
+    public bool IsPublic { get; private set; } = true;
+
     private RecipeItem() { }
 
-    internal static RecipeItem Create(int ingredientId, decimal quantityRequired)
+    internal static RecipeItem Create(int ingredientId, decimal quantityRequired, bool isPublic = true)
     {
         if (ingredientId <= 0)
         {
@@ -168,7 +175,7 @@ public sealed class RecipeItem
             throw new DomainRuleException(
                 "menu.recipe_invalid_quantity", "La cantidad requerida debe ser mayor que cero.");
         }
-        return new RecipeItem { IngredientId = ingredientId, QuantityRequired = quantityRequired };
+        return new RecipeItem { IngredientId = ingredientId, QuantityRequired = quantityRequired, IsPublic = isPublic };
     }
 }
 

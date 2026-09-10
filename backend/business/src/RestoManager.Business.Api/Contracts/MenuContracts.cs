@@ -4,7 +4,12 @@ namespace RestoManager.Business.Api.Contracts;
 public sealed record SaveCategoryRequest(string Name, string Description);
 
 // ---- Platos ----
-public sealed record RecipeLineBody(int IngredientId, decimal QuantityRequired);
+/// <summary>
+/// Línea de receta. <see cref="IsPublic"/> (por defecto <c>true</c>) indica si el
+/// ingrediente se muestra en la carta pública (issue #34); si el cliente lo omite,
+/// el ingrediente se ve.
+/// </summary>
+public sealed record RecipeLineBody(int IngredientId, decimal QuantityRequired, bool IsPublic = true);
 
 /// <summary>
 /// Alta/edición de plato. <see cref="Recipe"/> y <see cref="TaxRateIds"/> son opcionales:

@@ -129,7 +129,9 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 
 public class GetPublicCatalogHandlerTests
 {
-    private static MenuItem Item(int id, int categoryId, string name, bool available, string? imageKey = null, (int id, decimal qty)[]? recipe = null)
+    private static MenuItem Item(
+        int id, int categoryId, string name, bool available, string? imageKey = null,
+        (int id, decimal qty, bool isPublic)[]? recipe = null)
     {
         var m = new MenuItem(categoryId, name, $"desc {name}", 10m, available).WithId(id);
         if (imageKey is not null)
@@ -138,7 +140,7 @@ public class GetPublicCatalogHandlerTests
         }
         if (recipe is not null)
         {
-            m.SetRecipe(recipe.Select(r => (r.id, r.qty)));
+            m.SetRecipe(recipe.Select(r => (r.id, r.qty, r.isPublic)));
         }
         return m;
     }
@@ -240,12 +242,31 @@ public class GetPublicCatalogHandlerTests
             new Ingredient("Albahaca", "atado", 1m).WithId(11),
             new Ingredient("Mozzarella", "kg", 1m).WithId(12),
         };
-        var item = Item(1, 1, "Caprese", available: true, recipe: [(10, 0.2m), (11, 0.05m), (12, 0.15m)]);
+        var item = Item(1, 1, "Caprese", available: true,
+            recipe: [(10, 0.2m, true), (11, 0.05m, true), (12, 0.15m, true)]);
         var handler = Build(BranchWithSlug("centro"), [item], [], ingredients, [cat]);
 
         var catalog = await handler.HandleAsync("centro");
 
         Assert.Equal(["Albahaca", "Mozzarella", "Tomate"], catalog.Items.Single().Ingredients);
+    }
+
+    [Fact]
+    public async Task Ingredients_marked_not_public_are_hidden_from_the_catalog()
+    {
+        var cat = new Category("Principales", "").WithId(1);
+        var ingredients = new[]
+        {
+            new Ingredient("Tomate", "kg", 1m).WithId(10),
+            new Ingredient("Salsa secreta", "ml", 1m).WithId(11),
+        };
+        var item = Item(1, 1, "Plato de la casa", available: true,
+            recipe: [(10, 0.2m, true), (11, 0.05m, isPublic: false)]);
+        var handler = Build(BranchWithSlug("centro"), [item], [], ingredients, [cat]);
+
+        var catalog = await handler.HandleAsync("centro");
+
+        Assert.Equal(["Tomate"], catalog.Items.Single().Ingredients);
     }
 
     [Fact]

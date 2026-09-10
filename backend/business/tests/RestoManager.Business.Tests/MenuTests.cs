@@ -15,7 +15,7 @@ public class MenuItemRecipeTests
     {
         var item = NewItem();
         var ex = Assert.Throws<DomainRuleException>(() =>
-            item.SetRecipe([(10, 1m), (10, 2m)]));
+            item.SetRecipe([(10, 1m, true), (10, 2m, true)]));
         Assert.Equal("menu.recipe_duplicate_ingredient", ex.Code);
     }
 
@@ -23,20 +23,30 @@ public class MenuItemRecipeTests
     public void SetRecipe_rejects_non_positive_quantity()
     {
         var item = NewItem();
-        Assert.Throws<DomainRuleException>(() => item.SetRecipe([(10, 0m)]));
-        Assert.Throws<DomainRuleException>(() => item.SetRecipe([(10, -1m)]));
+        Assert.Throws<DomainRuleException>(() => item.SetRecipe([(10, 0m, true)]));
+        Assert.Throws<DomainRuleException>(() => item.SetRecipe([(10, -1m, true)]));
     }
 
     [Fact]
     public void SetRecipe_replaces_previous_lines()
     {
         var item = NewItem();
-        item.SetRecipe([(10, 1m), (11, 2m)]);
-        item.SetRecipe([(12, 3m)]);
+        item.SetRecipe([(10, 1m, true), (11, 2m, true)]);
+        item.SetRecipe([(12, 3m, true)]);
 
         Assert.Single(item.Recipe);
         Assert.Equal(12, item.Recipe[0].IngredientId);
         Assert.Equal(3m, item.Recipe[0].QuantityRequired);
+    }
+
+    [Fact]
+    public void SetRecipe_carries_the_public_visibility_flag()
+    {
+        var item = NewItem();
+        item.SetRecipe([(10, 1m, true), (11, 2m, false)]);
+
+        Assert.True(item.Recipe.Single(r => r.IngredientId == 10).IsPublic);
+        Assert.False(item.Recipe.Single(r => r.IngredientId == 11).IsPublic);
     }
 
     [Fact]
@@ -144,7 +154,7 @@ public class MenuItemCostTests
     public async Task Cost_is_sum_of_quantity_times_unit_price()
     {
         var item = new MenuItem(1, "Pizza", "", 12m, true);
-        item.SetRecipe([(10, 0.25m), (11, 0.50m)]);
+        item.SetRecipe([(10, 0.25m, true), (11, 0.50m, true)]);
 
         var handler = new GetMenuItemCostHandler(
             new FakeMenuItems(item),
