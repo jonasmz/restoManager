@@ -6,7 +6,8 @@ export interface ExportColumn<T> {
   value: (row: T) => string | number | null | undefined;
 }
 
-function triggerDownload(blob: Blob, filename: string): void {
+/** Fuerza la descarga de un blob con el nombre indicado. */
+export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

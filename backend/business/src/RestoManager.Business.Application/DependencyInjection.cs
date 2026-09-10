@@ -156,6 +156,9 @@ public static class DependencyInjection
         services.AddScoped<ListTaxRatesHandler>();
         services.AddScoped<GetTaxRateHandler>();
 
+        // Reportes (Fase 9/10)
+        services.AddScoped<Reports.ReportDocumentBuilder>();
+
         return services;
     }
 }

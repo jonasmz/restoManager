@@ -28,7 +28,12 @@ public interface IReportQueries
     Task<IReadOnlyList<TableTurnover>> TableTurnoverAsync(ReportScope scope, CancellationToken ct = default);
 
     Task<DashboardPayload> DashboardAsync(ReportScope scope, CancellationToken ct = default);
+
+    /// <summary>Datos de cabecera para el PDF (Fase 10): restaurante, sucursal, CUIT/NIF.</summary>
+    Task<ReportHeader> HeaderAsync(int branchId, CancellationToken ct = default);
 }
+
+public sealed record ReportHeader(string RestaurantName, string BranchName, string TaxNumber);
 
 /// <summary>Filtros comunes de un reporte. <paramref name="From"/>/<paramref name="To"/> se aplican sobre <c>order_time</c> (medias-abiertas [from, to)).</summary>
 public sealed record ReportScope(int BranchId, DateTime? From, DateTime? To);

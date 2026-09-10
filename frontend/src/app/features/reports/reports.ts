@@ -1,11 +1,11 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { NgApexchartsModule } from 'ng-apexcharts';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
-import { ExportColumn } from '../../core/export/table-export';
+import { ExportColumn, triggerDownload } from '../../core/export/table-export';
 
 /** Tabla de reporte lista para mostrar y exportar (columnas y filas ya resueltas). */
 interface ReportTable {
@@ -13,6 +13,7 @@ interface ReportTable {
   file: string;
   columns: ExportColumn<unknown>[];
   rows: readonly unknown[];
+  pdf: () => Promise<void>;
 }
 
 const erase = <T>(columns: ExportColumn<T>[]): ExportColumn<unknown>[] =>
@@ -54,6 +55,8 @@ import {
           <button type="button" class="btn btn-outline-secondary" (click)="preset(30)">30d</button>
           <button type="button" class="btn btn-outline-secondary" (click)="preset(90)">90d</button>
         </div>
+        <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="downloadingPdf()"
+          (click)="downloadReportPdf()"><i class="ti ti-file-type-pdf me-1"></i>Informe PDF</button>
       </div>
     </div>
 
@@ -95,7 +98,8 @@ import {
             <div class="card h-100">
               <div class="card-header bg-white px-4 py-3 d-flex justify-content-between align-items-center">
                 <h4 class="mb-0 h6">{{ t.title }}</h4>
-                <app-export-buttons [name]="t.file" [sheet]="t.title" [columns]="t.columns" [rows]="t.rows" />
+                <app-export-buttons [name]="t.file" [sheet]="t.title" [columns]="t.columns"
+                  [rows]="t.rows" [pdf]="t.pdf" />
               </div>
               <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
@@ -144,8 +148,28 @@ export class Reports {
   protected readonly discounts = signal<DiscountApplied[]>([]);
   protected readonly turnover = signal<TableTurnover[]>([]);
 
+  private readonly lastRange = signal<DateRange>({});
+  protected readonly downloadingPdf = signal(false);
+
+  protected async downloadReportPdf(): Promise<void> {
+    this.downloadingPdf.set(true);
+    try {
+      await this.pdfFor('dashboard/pdf', 'informe')();
+    } finally {
+      this.downloadingPdf.set(false);
+    }
+  }
+
   private m(v: number): string {
     return this.money.transform(v, 'ARS', 'symbol', '1.2-2', 'es-AR') ?? String(v);
+  }
+
+  /** Descarga el PDF server-side de un reporte (Fase 10). */
+  private pdfFor(path: string, file: string, extra: Record<string, string | number> = {}): () => Promise<void> {
+    return async () => {
+      const blob = await firstValueFrom(this.api.pdf(path, this.lastRange(), extra));
+      triggerDownload(blob, `${file}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    };
   }
 
   protected readonly dayChart = computed(() => {
@@ -168,14 +192,17 @@ export class Reports {
       {
         title: 'Ventas por canal', file: 'ventas-por-canal',
         columns: erase(bucketCols('Canal')), rows: this.byChannel(),
+        pdf: this.pdfFor('sales/pdf', 'ventas-por-canal', { groupBy: 'channel' }),
       },
       {
         title: 'Ventas por empleado', file: 'ventas-por-empleado',
         columns: erase(bucketCols('Empleado')), rows: this.byEmployee(),
+        pdf: this.pdfFor('sales/pdf', 'ventas-por-empleado', { groupBy: 'employee' }),
       },
       {
         title: 'Ventas por categoría', file: 'ventas-por-categoria',
         columns: erase(bucketCols('Categoría')), rows: this.byCategory(),
+        pdf: this.pdfFor('sales/pdf', 'ventas-por-categoria', { groupBy: 'category' }),
       },
       {
         title: 'Productos más vendidos', file: 'productos-top',
@@ -185,6 +212,7 @@ export class Reports {
           { header: 'Monto', value: (r) => this.m(r.amount) },
         ]),
         rows: this.top(),
+        pdf: this.pdfFor('products/top/pdf', 'productos-top', { limit: 10 }),
       },
       {
         title: 'Pagos por método', file: 'pagos-por-metodo',
@@ -194,6 +222,7 @@ export class Reports {
           { header: 'Monto', value: (r) => this.m(r.amount) },
         ]),
         rows: this.payments(),
+        pdf: this.pdfFor('payments/by-method/pdf', 'pagos-por-metodo'),
       },
       {
         title: 'Descuentos aplicados', file: 'descuentos-aplicados',
@@ -203,6 +232,7 @@ export class Reports {
           { header: 'Total', value: (r) => this.m(r.totalAmount) },
         ]),
         rows: this.discounts(),
+        pdf: this.pdfFor('discounts/applied/pdf', 'descuentos-aplicados'),
       },
       {
         title: 'Rotación de mesas', file: 'rotacion-mesas',
@@ -213,6 +243,7 @@ export class Reports {
           { header: 'Comensales medios', value: (r) => r.avgGuests },
         ]),
         rows: this.turnover(),
+        pdf: this.pdfFor('tables/turnover/pdf', 'rotacion-mesas'),
       },
     ];
   });
@@ -232,6 +263,7 @@ export class Reports {
       from: new Date(this.fromDate + 'T00:00:00').toISOString(),
       to: new Date(this.toDate + 'T23:59:59').toISOString(),
     };
+    this.lastRange.set(r);
     this.error.set(null);
     forkJoin({
       summary: this.api.salesSummary(r),

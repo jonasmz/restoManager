@@ -304,6 +304,19 @@ public sealed class ReportQueries(BusinessDbContext db) : IReportQueries
             lowStock.Take(8).ToList(), recent);
     }
 
+    public async Task<ReportHeader> HeaderAsync(int branchId, CancellationToken ct = default)
+    {
+        var row = await (from b in db.Branches
+                         join r in db.Restaurants on b.RestaurantId equals r.Id
+                         where b.Id == branchId
+                         select new { Branch = b.Name, Restaurant = r.Name, r.TaxNumber })
+            .FirstOrDefaultAsync(ct);
+
+        return row is null
+            ? new ReportHeader("—", $"Sucursal #{branchId}", "—")
+            : new ReportHeader(row.Restaurant, row.Branch, row.TaxNumber);
+    }
+
     private static string ChannelLabel(OrderChannel c) => c switch
     {
         OrderChannel.Mesa => "Mesa",

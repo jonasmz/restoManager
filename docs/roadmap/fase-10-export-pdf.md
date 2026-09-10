@@ -25,12 +25,18 @@ Fase 9 (endpoints de reportes y criterios MET-01/02).
   (KPIs + tablas), y opcionalmente PDF por tabla individual.
 - Policy `ReportsAccess` (ADMIN, BRANCH_MANAGER).
 
-### Decisiones bloqueantes
+### Decisiones bloqueantes — RESUELTAS (2026-09-10)
 
-1. `?format=pdf` en el endpoint existente vs. ruta `/pdf` dedicada.
-2. ¿Solo el informe completo del dashboard, o también un PDF por cada tabla?
-3. Encabezado/pie: ¿logo del restaurante (de `restaurants`), datos fiscales,
-   paginación? ¿Idioma fijo `es-AR`?
+1. **Ruta `/pdf` dedicada** por reporte (no `?format=pdf`). Refleja 1:1 los endpoints
+   JSON de la Fase 9 con sufijo `/pdf`.
+2. **Informe completo del dashboard + PDF por cada tabla**: `dashboard/pdf` (KPIs +
+   todas las secciones) y un PDF por reporte individual
+   (`sales/summary/pdf`, `sales/pdf?groupBy=`, `products/top/pdf`,
+   `payments/by-method/pdf`, `discounts/applied/pdf`, `inventory/low-stock/pdf`,
+   `purchasing/cost/pdf`, `tables/turnover/pdf`).
+3. **Encabezado completo, es-AR fijo, sin logo** (el esquema no tiene columna).
+   Encabezado: nombre del restaurante, sucursal, CUIT/NIF, período y fecha de
+   emisión. Pie: `Página X de Y` + restaurante/título. Cifras y fechas en es-AR (`$`).
 
 ## Backend
 
@@ -63,4 +69,25 @@ Fase 9 (endpoints de reportes y criterios MET-01/02).
 
 ## Ramas/PR
 
-1. `feat/fase-10-export-pdf` — renderer QuestPDF + endpoints + botón en el frontend.
+1. `feat/fase-10-export-pdf` — renderer QuestPDF + endpoints + botón en el frontend. **Hecha (PR #26).**
+
+## Estado — Fase 10 COMPLETA (PR #26)
+
+- Paquete `QuestPDF 2025.7.0` en la Api; `QuestPDF.Settings.License =
+  LicenseType.Community` en `Program.cs`.
+- Modelo agnóstico `ReportDocument` (Application) + `ReportDocumentBuilder`
+  (arma KPIs y secciones desde `IReportQueries`; sin dependencia de QuestPDF).
+  `IReportQueries.HeaderAsync` nuevo (restaurante + sucursal + CUIT/NIF).
+- Port `IReportRenderer` (Application) → `QuestPdfReportRenderer` (Api): A4,
+  encabezado/pie, KPIs en tarjetas, cada sección como tabla.
+- `MapReportPdfEndpoints`: 9 rutas `GET /api/v1/reports/**/pdf` bajo `ReportsAccess`,
+  mismos filtros `?from=&to=` + `X-Branch-Id`, `Results.File(pdf, "application/pdf",
+  "<nombre>-<fecha>.pdf")`.
+- Frontend: `ReportsApiService.pdf()` (responseType blob), `ExportButtons` gana botón
+  **PDF** opcional (callback), `triggerDownload` exportado. Reportes: botón "Informe
+  PDF" (dashboard completo) + botón PDF por tabla. Panel: botón PDF con el rango activo.
+- e2e vs compose: los 9 endpoints devuelven PDF válido (curl + navegador 200);
+  contenido verificado con `pdftotext`. `dotnet test` 128 verdes; `ng lint`/`ng build`
+  limpios.
+
+**ROADMAP COMPLETO** (fases 0–10).
