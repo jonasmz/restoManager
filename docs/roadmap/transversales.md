@@ -40,12 +40,12 @@ antes de implementar. **No está aprobado todavía.**
 | `payments.status` **(APROBADO, Fase 6)** | `PENDING`, `CONFIRMED`, `FAILED`, `REFUNDED` | `PENDING→CONFIRMED`, `PENDING→FAILED`, `CONFIRMED→REFUNDED` | Cuenta para métricas = `CONFIRMED`. Reversa de venta ⇒ `REFUNDED`. |
 | `payments.payment_method` **(APROBADO, Fase 6)** | `CASH`, `CARD`, `TRANSFER`, `GIFT_CARD`, `OTHER` | — | `GIFT_CARD` genera `gift_card_transactions`. Sin propina. |
 | `reservations.status` | `PENDING`, `CONFIRMED`, `SEATED`, `CANCELLED`, `NO_SHOW` | `PENDING→CONFIRMED→SEATED`; `PENDING/CONFIRMED→CANCELLED`; `CONFIRMED→NO_SHOW` | `RESERVED` (derivado) usa `CONFIRMED` dentro de la ventana (TBL-02). |
-| `deliveries.status` | `PENDING`, `ASSIGNED`, `IN_TRANSIT`, `DELIVERED`, `FAILED`, `CANCELLED` | `PENDING→ASSIGNED→IN_TRANSIT→DELIVERED`; `ASSIGNED/IN_TRANSIT→FAILED`; `*→CANCELLED` | `actual_time` se informa al llegar a `DELIVERED`/`FAILED`. |
+| `deliveries.status` **(APROBADO, Fase 7)** | `PENDING`, `ASSIGNED`, `IN_TRANSIT`, `DELIVERED`, `FAILED`, `CANCELLED` | `PENDING→ASSIGNED→IN_TRANSIT→DELIVERED`; `ASSIGNED/IN_TRANSIT→FAILED`; `PENDING/ASSIGNED/FAILED→ASSIGNED` (reasignar); `PENDING/ASSIGNED/IN_TRANSIT/FAILED→CANCELLED` | Nace `PENDING` con repartidor (`driver_id` NOT NULL). `actual_time` solo al llegar a `DELIVERED`/`FAILED`. Cancelar la entrega cancela el pedido (misma tx). |
 | `purchase_orders.status` **(APROBADO, Fase 3)** | `DRAFT`, `SENT`, `PARTIALLY_RECEIVED`, `RECEIVED`, `CANCELLED` | `DRAFT→SENT→RECEIVED`; `*→CANCELLED` | Movimiento `PURCHASE` al pasar a `RECEIVED` (INV-07). `PARTIALLY_RECEIVED` reservado para cuando se soporte recepción parcial (hoy solo total). |
 | `employee_leaves.status` | `REQUESTED`, `APPROVED`, `REJECTED`, `CANCELLED` | `REQUESTED→APPROVED/REJECTED`; `REQUESTED/APPROVED→CANCELLED` | — |
 | `employee_leaves.leave_type` | `VACATION`, `SICK`, `UNPAID`, `OTHER` | — | — |
 | `discounts.type` **(APROBADO, Fase 6)** | `PERCENTAGE`, `FIXED_AMOUNT` | — | `order_discounts.applied_amount` se congela al aplicar (%=sobre subtotal de ítems; fijo=topado). Varios por pedido, se suman. |
-| `delivery_drivers.vehicle_type` | `MOTORCYCLE`, `BICYCLE`, `CAR`, `ON_FOOT` | — | — |
+| `delivery_drivers.vehicle_type` **(APROBADO, Fase 7)** | `MOTORCYCLE`, `BICYCLE`, `CAR`, `ON_FOOT` | — | — |
 | `inventory_movements.reference_type` | `PURCHASE_ORDER`, `ORDER`, `WASTE_LOG`, `MANUAL_ADJUSTMENT` | — | Convención del spec §7.4. |
 
 **Fijos por `CHECK` en la BD (no se tocan):** `tables.operational_status`

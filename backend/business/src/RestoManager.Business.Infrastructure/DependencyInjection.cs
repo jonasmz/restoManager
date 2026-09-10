@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Customers;
+using RestoManager.Business.Domain.Delivery;
 using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
@@ -51,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<IGiftCardRepository, GiftCardRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IDiscountRepository, DiscountRepository>();
+        services.AddScoped<IDeliveryDriverRepository, DeliveryDriverRepository>();
+        services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IBranchRepository, BranchRepository>();

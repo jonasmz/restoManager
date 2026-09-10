@@ -11,7 +11,10 @@ internal sealed class DeliveryDriverConfig : IEntityTypeConfiguration<DeliveryDr
 {
     public void Configure(EntityTypeBuilder<DeliveryDriver> b)
     {
-        b.Property(x => x.VehicleType).HasMaxLength(50).IsRequired();
+        b.Property(x => x.VehicleType)
+            .HasConversion(v => v.ToDbValue(), v => VehicleTypeExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Property(x => x.LicensePlate).HasMaxLength(20).IsRequired();
         b.Fk<DeliveryDriver, Employee>(nameof(DeliveryDriver.EmployeeId));
     }
@@ -22,7 +25,10 @@ internal sealed class DeliveryConfig : IEntityTypeConfiguration<Delivery>
     public void Configure(EntityTypeBuilder<Delivery> b)
     {
         b.Property(x => x.DeliveryAddress).HasMaxLength(255).IsRequired();
-        b.Property(x => x.Status).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Status)
+            .HasConversion(v => v.ToDbValue(), v => DeliveryStatusExtensions.FromDbValue(v))
+            .HasMaxLength(50)
+            .IsRequired();
         b.Fk<Delivery, Order>(nameof(Delivery.OrderId));
         b.Fk<Delivery, DeliveryDriver>(nameof(Delivery.DriverId));
     }
