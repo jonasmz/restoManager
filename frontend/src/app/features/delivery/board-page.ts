@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -17,7 +17,7 @@ interface Column {
 
 @Component({
   selector: 'app-delivery-board',
-  imports: [RouterLink, DecimalPipe, DatePipe],
+  imports: [RouterLink, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-4">
@@ -59,7 +59,7 @@ interface Column {
                   </div>
                   <div class="small text-secondary">
                     <i class="ti ti-motorbike me-1"></i>{{ driverLabel(d.driverId) }} ·
-                    {{ d.orderTotal | number: '1.2-2' }}
+                    {{ d.orderTotal | currency }}
                   </div>
 
                   @if (assigningId() === d.id) {

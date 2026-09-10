@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -9,7 +9,7 @@ import { ORDER_CHANNELS, ORDER_STATUSES, Order } from './sales.models';
 
 @Component({
   selector: 'app-sales-orders',
-  imports: [RouterLink, DecimalPipe, DatePipe],
+  imports: [RouterLink, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-4">
@@ -56,8 +56,8 @@ import { ORDER_CHANNELS, ORDER_STATUSES, Order } from './sales.models';
                 <td class="small">{{ o.orderTime | date: 'short' }}</td>
                 <td class="small">{{ o.channel }}@if (o.tableId) { <span class="text-secondary"> · #{{ o.tableId }}</span> }</td>
                 <td><span class="badge" [class]="badge(o.status)">{{ o.status }}</span></td>
-                <td class="text-end small">{{ o.totalAmount | number: '1.2-2' }}</td>
-                <td class="text-end small">{{ o.confirmedPaid | number: '1.2-2' }}</td>
+                <td class="text-end small">{{ o.totalAmount | currency }}</td>
+                <td class="text-end small">{{ o.confirmedPaid | currency }}</td>
                 <td class="text-end"><a class="btn btn-light btn-sm" [routerLink]="['/pos/order', o.id]">Ver</a></td>
               </tr>
             } @empty { <tr><td colspan="7" class="text-center text-secondary py-4">Sin pedidos.</td></tr> }

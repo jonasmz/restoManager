@@ -162,6 +162,7 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
+        canActivate: [roleGuard('ADMIN', 'BRANCH_MANAGER')],
         loadComponent: () => import('./features/reports/reports').then((m) => m.Reports),
         title: 'Reportes',
       },
