@@ -117,6 +117,32 @@ public class OrderTotalTests
     }
 
     [Fact]
+    public void Adding_same_item_twice_merges_into_one_line_and_sums_quantity()
+    {
+        var order = NewBarOrder();
+        order.AddItem(menuItemId: 10, quantity: 1, unitPrice: 12.00m, notes: null);
+        order.AddItem(menuItemId: 10, quantity: 2, unitPrice: 99.00m, notes: null); // el precio de la 2.ª no aplica
+
+        Assert.Single(order.Items);
+        Assert.Equal(3, order.Items[0].Quantity);
+        Assert.Equal(12.00m, order.Items[0].UnitPrice);
+        Assert.Equal(36.00m, order.TotalAmount);
+    }
+
+    [Fact]
+    public void Same_item_with_a_different_note_stays_a_separate_line()
+    {
+        var order = NewBarOrder();
+        order.AddItem(menuItemId: 10, quantity: 1, unitPrice: 10.00m, notes: null);
+        order.AddItem(menuItemId: 10, quantity: 1, unitPrice: 10.00m, notes: "sin sal");
+        order.AddItem(menuItemId: 10, quantity: 1, unitPrice: 10.00m, notes: "  sin sal  "); // misma nota, se fusiona
+
+        Assert.Equal(2, order.Items.Count);
+        Assert.Equal(2, order.Items.Single(i => i.Notes == "sin sal").Quantity);
+        Assert.Equal(30.00m, order.TotalAmount);
+    }
+
+    [Fact]
     public void Remove_unknown_item_is_not_found()
         => Assert.Throws<NotFoundException>(() => NewBarOrder().RemoveItem(orderItemId: 123));
 }
