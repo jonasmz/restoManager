@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { environment } from '../../core/config/environment';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { MenuApiService } from './menu-api.service';
 import { Category, MenuItem } from './menu.models';
@@ -35,7 +36,13 @@ import { Category, MenuItem } from './menu.models';
           <tbody>
             @for (m of rows(); track m.id) {
               <tr>
-                <td><a [routerLink]="['/menu/items', m.id]">{{ m.name }}</a></td>
+                <td>
+                  @if (imageUrl(m); as src) {
+                    <img [src]="src" [alt]="m.name" width="32" height="32"
+                      class="rounded object-fit-cover me-2 align-middle" />
+                  }
+                  <a [routerLink]="['/menu/items', m.id]">{{ m.name }}</a>
+                </td>
                 <td class="text-secondary">{{ categoryName(m.categoryId) }}</td>
                 <td class="text-end">{{ m.price | currency }}</td>
                 <td>
@@ -71,6 +78,10 @@ export class MenuItemsPage {
 
   protected categoryName(id: number): string {
     return this.categories().find((c) => c.id === id)?.name ?? `#${id}`;
+  }
+
+  protected imageUrl(m: MenuItem): string | null {
+    return m.imageUrl ? `${environment.businessApiUrl}${m.imageUrl}` : null;
   }
 
   private reload(): void {

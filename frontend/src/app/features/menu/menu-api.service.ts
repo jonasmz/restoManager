@@ -50,6 +50,16 @@ export class MenuApiService {
     return this.http.get<MenuItemCost>(`${this.base}/menu-items/${id}/cost`);
   }
 
+  // ---- Imagen ilustrativa del plato (Fase 11) ----
+  uploadMenuItemImage(id: number, file: File): Observable<{ imageUrl: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.put<{ imageUrl: string }>(`${this.base}/menu-items/${id}/image`, form);
+  }
+  deleteMenuItemImage(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/menu-items/${id}/image`);
+  }
+
   // ---- Disponibilidad por sucursal activa (X-Branch-Id) ----
   getAvailability(id: number): Observable<MenuItemAvailability> {
     return this.http.get<MenuItemAvailability>(`${this.base}/menu-items/${id}/availability`);

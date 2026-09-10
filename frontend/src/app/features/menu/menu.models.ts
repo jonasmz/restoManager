@@ -27,6 +27,8 @@ export interface MenuItem {
   isAvailable: boolean;
   recipe: RecipeLine[];
   taxRateIds: number[];
+  /** Ruta relativa a la Business API (`/media/menu/…`) o `null` (Fase 11). */
+  imageUrl: string | null;
 }
 
 /** Cuerpo de alta/edición: receta e impuestos van inline (se persiste en una operación). */

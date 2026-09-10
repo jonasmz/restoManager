@@ -210,6 +210,12 @@ export const routes: Routes = [
     title: 'Iniciar sesión',
   },
   {
+    // Carta pública / QR (Fase 11): sin shell ni guard.
+    path: 'carta/:slug',
+    loadComponent: () => import('./features/catalog/catalog-page').then((m) => m.CatalogPage),
+    title: 'Carta',
+  },
+  {
     path: '**',
     loadComponent: () => import('./features/not-found/not-found').then((m) => m.NotFound),
     title: 'Página no encontrada',
