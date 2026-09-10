@@ -17,6 +17,7 @@ const INV_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'INVENTORY'] as const;
 const MENU_ROLES = ['ADMIN', 'BRANCH_MANAGER'] as const;
 const SALON_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
 const SALES_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
+const DELIVERY_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'WAITER'] as const;
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -60,6 +61,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { label: 'Punto de venta', icon: 'ti-cash-register', route: '/pos', exact: true, roles: SALES_ROLES },
       { label: 'Pedidos', icon: 'ti-receipt-2', route: '/sales/orders', roles: SALES_ROLES },
       { label: 'Descuentos', icon: 'ti-discount', route: '/sales/discounts', roles: MENU_ROLES },
+    ],
+  },
+  {
+    title: 'Delivery',
+    items: [
+      { label: 'Despacho', icon: 'ti-truck-loading', route: '/delivery/board', roles: DELIVERY_ROLES },
+      { label: 'Repartidores', icon: 'ti-motorbike', route: '/delivery/drivers', roles: MENU_ROLES },
     ],
   },
   {
