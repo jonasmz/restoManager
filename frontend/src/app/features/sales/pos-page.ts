@@ -1,10 +1,14 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { map } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { DeliveryApiService } from '../delivery/delivery-api.service';
+import { Driver } from '../delivery/delivery.models';
 import { SalesApiService } from './sales-api.service';
 import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
 
@@ -44,10 +48,34 @@ import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
                     (click)="channel.set(c)" [disabled]="c === 'MESA'">{{ label(c) }}</button>
                 }
               </div>
-              <p class="text-secondary small">Para un pedido de mesa, ve al tablero y usa «Abrir cuenta».</p>
+
+              @if (channel() === 'DELIVERY') {
+                <form [formGroup]="deliveryForm" class="row g-2 mb-3">
+                  <div class="col-12">
+                    <label class="form-label small" for="addr">Dirección de entrega</label>
+                    <input id="addr" class="form-control form-control-sm" formControlName="deliveryAddress" />
+                  </div>
+                  <div class="col-7">
+                    <label class="form-label small" for="eta">Hora estimada</label>
+                    <input id="eta" type="datetime-local" class="form-control form-control-sm" formControlName="estimatedTime" />
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label small" for="drv">Repartidor</label>
+                    <select id="drv" class="form-select form-select-sm" formControlName="driverId">
+                      <option [value]="0" disabled>—</option>
+                      @for (d of drivers(); track d.id) { <option [value]="d.id">{{ d.licensePlate }}</option> }
+                    </select>
+                  </div>
+                  @if (drivers().length === 0) {
+                    <div class="col-12"><span class="small text-danger">No hay repartidores. Crea uno en Delivery → Repartidores.</span></div>
+                  }
+                </form>
+              } @else {
+                <p class="text-secondary small">Para un pedido de mesa, ve al tablero y usa «Abrir cuenta».</p>
+              }
             }
 
-            <button type="button" class="btn btn-primary w-100" (click)="create()" [disabled]="creating()">
+            <button type="button" class="btn btn-primary w-100" (click)="create()" [disabled]="creating() || !canCreate()">
               {{ creating() ? 'Creando…' : 'Abrir pedido' }}
             </button>
           </div>
@@ -87,18 +115,37 @@ import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
 export class PosPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
   private readonly api = inject(SalesApiService);
+  private readonly deliveryApi = inject(DeliveryApiService);
   protected readonly branch = inject(BranchContextService);
 
   protected readonly channels = ORDER_CHANNELS;
   protected readonly channel = signal<OrderChannel>('BARRA');
   protected readonly openOrders = signal<Order[]>([]);
+  protected readonly drivers = signal<Driver[]>([]);
   protected readonly message = signal<string | null>(null);
   protected readonly creating = signal(false);
 
   protected readonly ctxTableId = signal<number | null>(null);
   protected readonly ctxSessionId = signal<number | null>(null);
   private readonly ctxCustomerId = signal<number | null>(null);
+
+  protected readonly deliveryForm = this.fb.nonNullable.group({
+    deliveryAddress: ['', [Validators.required, Validators.maxLength(255)]],
+    estimatedTime: [this.defaultEta(), Validators.required],
+    driverId: [0, [Validators.required, Validators.min(1)]],
+  });
+
+  // La app es zoneless: se refleja la validez del form reactivo en una señal.
+  private readonly deliveryValid = toSignal(
+    this.deliveryForm.statusChanges.pipe(map((s) => s === 'VALID')),
+    { initialValue: this.deliveryForm.valid },
+  );
+
+  protected canCreate(): boolean {
+    return this.channel() !== 'DELIVERY' || !!this.ctxTableId() || this.deliveryValid();
+  }
 
   constructor() {
     const q = this.route.snapshot.queryParamMap;
@@ -113,7 +160,14 @@ export class PosPage {
         this.ctxCustomerId.set(Number(q.get('customerId')));
       }
     }
+    this.deliveryApi.listDrivers().subscribe({ next: (p) => this.drivers.set(p.items) });
     this.reload();
+  }
+
+  private defaultEta(): string {
+    const t = new Date(Date.now() + 45 * 60_000);
+    t.setSeconds(0, 0);
+    return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}T${pad(t.getHours())}:${pad(t.getMinutes())}`;
   }
 
   protected label(c: string): string {
@@ -129,14 +183,24 @@ export class PosPage {
   }
 
   protected create(): void {
+    if (!this.canCreate()) {
+      return;
+    }
     this.creating.set(true);
     this.message.set(null);
+
+    const isDelivery = this.channel() === 'DELIVERY' && !this.ctxTableId();
+    const dv = this.deliveryForm.getRawValue();
+
     this.api
       .createOrder({
         channel: this.channel(),
         tableId: this.ctxTableId(),
         tableSessionId: this.ctxSessionId(),
         customerId: this.ctxCustomerId(),
+        deliveryAddress: isDelivery ? dv.deliveryAddress : null,
+        estimatedTime: isDelivery ? dv.estimatedTime : null,
+        driverId: isDelivery ? Number(dv.driverId) : null,
       })
       .subscribe({
         next: ({ id }) => this.router.navigate(['/pos/order', id]),
@@ -146,4 +210,8 @@ export class PosPage {
         },
       });
   }
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
 }

@@ -65,7 +65,7 @@ Fase 6 (pedidos con canal). Fase 2 (empleados, para repartidores).
       con canal DELIVERY crea entregas). *(7a)*
 - [x] `actual_time` se informa solo al pasar a `DELIVERED`/`FAILED`; es `NULL` antes. *(7a)*
 - [x] Asignar repartidor y avanzar estado siguen las transiciones del catálogo. *(7a)*
-- [ ] El tablero de despacho refleja los estados con colores del template. *(7b)*
+- [x] El tablero de despacho refleja los estados con colores del template. *(7b)*
 
 ## Pruebas
 
@@ -77,7 +77,31 @@ Fase 6 (pedidos con canal). Fase 2 (empleados, para repartidores).
 ## Ramas/PR (cortar en 2)
 
 1. `feat/fase-07a-delivery-backend` — entidades, DOM-08 en creación, transiciones. **Hecha (PR #20).**
-2. `feat/fase-07b-delivery-frontend` — despacho + repartidores + form en POS.
+2. `feat/fase-07b-delivery-frontend` — despacho + repartidores + form en POS. **Hecha (PR #21).**
+
+### Estado 7b (frontend)
+
+- `frontend/src/app/features/delivery/`: `DeliveryApiService` + `delivery.models.ts`.
+  - **`delivery/board`** (`BoardPage`) — tablero kanban de 4 columnas
+    (Pendientes / Asignadas / En camino / Cerradas). Cada tarjeta: pedido (link a
+    `/pos/order/:id`), dirección, hora estimada/real, repartidor (patente), total y
+    estado del pedido. Acciones por estado: asignar/reasignar (select inline),
+    «En camino», «Entregada», «Fallida», «Cancelar» (avisa que también cancela el
+    pedido). Poll cada 20 s.
+  - **`delivery/drivers`** (`DriversPage`) — CRUD de repartidores (empleado desde
+    `OrgApiService`, vehículo, patente).
+- **POS** (`PosPage`): al elegir canal `DELIVERY` aparece un subformulario
+  (dirección + hora estimada + repartidor) y «Abrir pedido» se habilita al
+  completarlo; los campos se envían en `createOrder`. `CreateOrderBody` ampliado.
+- Rutas bajo `Layout` con `roleGuard`: board = `DeliveryAccess` (ADMIN/
+  BRANCH_MANAGER/WAITER), drivers = ADMIN/BRANCH_MANAGER. Sidebar grupo «Delivery».
+- App **zoneless**: la validez del subformulario de delivery se refleja en una
+  señal (`toSignal(statusChanges)`) para que el botón se habilite.
+- `ng lint` + `ng build` limpios. Verificado en navegador contra compose: crear
+  pedido DELIVERY desde el POS (form dirección/hora/repartidor), tablero con las 4
+  columnas, asignar repartidor → `ASSIGNED`, «En camino» → `IN_TRANSIT`,
+  «Entregada» → `DELIVERED` con hora real, alta de repartidor.
+- Con esto la **Fase 7 queda COMPLETA**. Siguiente: Fase 8 (Clientes y fidelización).
 
 ### Estado 7a (backend)
 

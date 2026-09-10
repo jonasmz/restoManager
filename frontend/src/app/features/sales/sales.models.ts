@@ -79,6 +79,10 @@ export interface CreateOrderBody {
   tableId?: number | null;
   tableSessionId?: number | null;
   customerId?: number | null;
+  /** Solo canal DELIVERY (Fase 7). */
+  deliveryAddress?: string | null;
+  estimatedTime?: string | null;
+  driverId?: number | null;
 }
 
 export interface SaveDiscountBody {
