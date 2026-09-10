@@ -94,5 +94,25 @@ Fase 6 (pedidos y `gift_card_transactions` como medio de pago).
 
 ## Ramas/PR (cortar en 2)
 
-1. `feat/fase-08a-clientes-backend` — clientes, reseñas, gift cards, puntos, endpoints.
-2. `feat/fase-08b-clientes-frontend` — pantallas + integración con el POS.
+1. `feat/fase-08a-clientes-backend` — clientes, reseñas, gift cards, puntos, endpoints. **Hecha (PR #22).**
+2. `feat/fase-08b-clientes-frontend` — pantallas + integración con el POS. **Hecha (PR #23).**
+
+## Estado — Fase 8 COMPLETA
+
+- **8a (PR #22)**: hexágono ampliado — `Customer` (Add/RedeemLoyaltyPoints), `Review`
+  y `GiftCard` con factories e invariantes, `GiftCard.Redeem` rechaza tarjeta
+  caducada, `Order.ApplyLoyaltyRedemption` (OrderDiscount de importe congelado, uno
+  por pedido). `LoyaltyPolicy` por config. Acumulación en `CloseOrderHandler`;
+  `RedeemLoyaltyPointsHandler`. Endpoints bajo `DiningRoomAccess`. Sin migración.
+  Seeder: descuento de sistema "Canje de puntos de fidelidad" + 500 pts + reseña demo.
+  18 tests nuevos (125 total).
+- **8b (PR #23)**: `frontend/src/app/features/customers/` — `CustomersApiService` +
+  `customers.models.ts`; `CustomersPage` (lista + buscador con debounce),
+  `CustomerDetailPage` (pestañas Datos / Pedidos / Puntos / Gift cards, con emisión
+  de gift card), `ReviewsPage` (lista por sucursal con estrellas + filtro `minRating`
+  + alta). Rutas bajo `roleGuard(ADMIN,BRANCH_MANAGER,WAITER)`; sidebar grupo
+  "Clientes". POS: selector "Cliente (opcional)" en el alta de pedido (pasa
+  `customerId` al crear) y panel "Fidelidad" en la ficha de pedido abierto para
+  canjear puntos (usa `POST /customers/{id}/loyalty/redeem`). `ng lint` + `ng build`
+  limpios; verificado en navegador (emitir gift card, alta de reseña, crear pedido
+  con cliente, canjear 200 pts → −2.00, saldo de puntos 322 → 122).

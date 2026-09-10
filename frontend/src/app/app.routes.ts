@@ -11,6 +11,7 @@ const salesRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
 const discountRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
 const deliveryRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
 const driverRoles = roleGuard('ADMIN', 'BRANCH_MANAGER');
+const customerRoles = roleGuard('ADMIN', 'BRANCH_MANAGER', 'WAITER');
 
 /**
  * El shell (Layout) queda tras `authGuard`. Las páginas de módulos se añaden por
@@ -140,6 +141,24 @@ export const routes: Routes = [
         canActivate: [driverRoles],
         loadComponent: () => import('./features/delivery/drivers-page').then((m) => m.DriversPage),
         title: 'Repartidores',
+      },
+      {
+        path: 'customers',
+        canActivate: [customerRoles],
+        loadComponent: () => import('./features/customers/customers-page').then((m) => m.CustomersPage),
+        title: 'Clientes',
+      },
+      {
+        path: 'customers/:id',
+        canActivate: [customerRoles],
+        loadComponent: () => import('./features/customers/customer-detail-page').then((m) => m.CustomerDetailPage),
+        title: 'Cliente',
+      },
+      {
+        path: 'reviews',
+        canActivate: [customerRoles],
+        loadComponent: () => import('./features/customers/reviews-page').then((m) => m.ReviewsPage),
+        title: 'Reseñas',
       },
       {
         path: 'reports',

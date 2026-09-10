@@ -7,6 +7,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { CustomersApiService } from '../customers/customers-api.service';
+import { Customer } from '../customers/customers.models';
 import { DeliveryApiService } from '../delivery/delivery-api.service';
 import { Driver } from '../delivery/delivery.models';
 import { SalesApiService } from './sales-api.service';
@@ -73,6 +75,15 @@ import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
               } @else {
                 <p class="text-secondary small">Para un pedido de mesa, ve al tablero y usa «Abrir cuenta».</p>
               }
+
+              <label class="form-label small" for="cust">Cliente <span class="text-secondary">(opcional)</span></label>
+              <select id="cust" class="form-select form-select-sm mb-3" [value]="selectedCustomerId()"
+                (change)="selectedCustomerId.set(+$any($event.target).value)">
+                <option [value]="0">Sin identificar</option>
+                @for (c of customers(); track c.id) {
+                  <option [value]="c.id">{{ c.lastName }}, {{ c.firstName }}</option>
+                }
+              </select>
             }
 
             <button type="button" class="btn btn-primary w-100" (click)="create()" [disabled]="creating() || !canCreate()">
@@ -118,12 +129,15 @@ export class PosPage {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(SalesApiService);
   private readonly deliveryApi = inject(DeliveryApiService);
+  private readonly customersApi = inject(CustomersApiService);
   protected readonly branch = inject(BranchContextService);
 
   protected readonly channels = ORDER_CHANNELS;
   protected readonly channel = signal<OrderChannel>('BARRA');
   protected readonly openOrders = signal<Order[]>([]);
   protected readonly drivers = signal<Driver[]>([]);
+  protected readonly customers = signal<Customer[]>([]);
+  protected readonly selectedCustomerId = signal(0);
   protected readonly message = signal<string | null>(null);
   protected readonly creating = signal(false);
 
@@ -161,6 +175,7 @@ export class PosPage {
       }
     }
     this.deliveryApi.listDrivers().subscribe({ next: (p) => this.drivers.set(p.items) });
+    this.customersApi.listCustomers().subscribe({ next: (p) => this.customers.set(p.items) });
     this.reload();
   }
 
@@ -197,7 +212,7 @@ export class PosPage {
         channel: this.channel(),
         tableId: this.ctxTableId(),
         tableSessionId: this.ctxSessionId(),
-        customerId: this.ctxCustomerId(),
+        customerId: this.ctxCustomerId() ?? (this.selectedCustomerId() || null),
         deliveryAddress: isDelivery ? dv.deliveryAddress : null,
         estimatedTime: isDelivery ? dv.estimatedTime : null,
         driverId: isDelivery ? Number(dv.driverId) : null,
