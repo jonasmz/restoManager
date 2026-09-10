@@ -453,7 +453,12 @@ public sealed class RegisterPaymentHandler(
 // ─────────────────────────── Cierre y cancelación (Fase 6b) ───────────────────────────
 
 public sealed class CloseOrderHandler(
-    IOrderRepository orders, IDeliveryRepository deliveries, IUnitOfWork unitOfWork, BranchAccessGuard access)
+    IOrderRepository orders,
+    IDeliveryRepository deliveries,
+    ICustomerRepository customers,
+    IUnitOfWork unitOfWork,
+    BranchAccessGuard access,
+    LoyaltyPolicy loyalty)
 {
     public async Task HandleAsync(int orderId, CancellationToken ct = default)
     {
@@ -467,8 +472,25 @@ public sealed class CloseOrderHandler(
                 "sales.delivery_missing", "El pedido DELIVERY no tiene una entrega asociada.");
         }
 
-        order.CloseOrder();
-        await unitOfWork.SaveChangesAsync(ct);
+        var statusBefore = order.Status;
+
+        await unitOfWork.ExecuteInTransactionAsync(async token =>
+        {
+            order.CloseOrder();
+
+            // Acumulación de fidelidad (Fase 8, decisión 1): al pasar a CLOSED, si el
+            // pedido está identificado con un cliente, se le suman floor(total) puntos.
+            if (statusBefore != OrderStatus.Closed && order.CustomerId is { } customerId)
+            {
+                var earned = loyalty.PointsFor(order.TotalAmount);
+                if (earned > 0)
+                {
+                    var customer = await customers.GetAsync(customerId, token)
+                        ?? throw new NotFoundException("cliente", customerId);
+                    customer.AddLoyaltyPoints(earned);
+                }
+            }
+        }, ct);
     }
 }
 

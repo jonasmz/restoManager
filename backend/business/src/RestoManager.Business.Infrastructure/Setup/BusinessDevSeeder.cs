@@ -27,6 +27,7 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         await SeedDiningRoomAsync(cancellationToken);
         await SeedSalesAsync(cancellationToken);
         await SeedDeliveryAsync(cancellationToken);
+        await SeedLoyaltyAsync(cancellationToken);
     }
 
     /// <summary>Fase 7: un repartidor demo (empleado existente) para probar el canal DELIVERY.</summary>
@@ -203,15 +204,43 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
             var customerId = await db.Customers.OrderBy(c => c.Id).Select(c => c.Id).FirstOrDefaultAsync(cancellationToken);
             if (customerId > 0)
             {
-                var card = new GiftCard
-                {
-                    CustomerId = customerId,
-                    CardNumber = "GC-DEMO-0001",
-                    ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(2),
-                };
-                db.GiftCards.Add(card);
-                // Balance tiene setter privado (se recarga en Fase 8); para la semilla se fija por EF.
-                db.Entry(card).Property(nameof(GiftCard.Balance)).CurrentValue = 100m;
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                db.GiftCards.Add(GiftCard.Issue(customerId, "GC-DEMO-0001", 100m, today.AddYears(2), today));
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fase 8: la fila de <c>discounts</c> de sistema que respalda el canje de puntos
+    /// (la FK de <c>order_discounts</c> exige un descuento real) y unos puntos + reseña
+    /// demo. Bloque idempotente.
+    /// </summary>
+    private async Task SeedLoyaltyAsync(CancellationToken cancellationToken)
+    {
+        const string systemDiscountName = "Canje de puntos de fidelidad";
+        if (!await db.Discounts.AnyAsync(d => d.Name == systemDiscountName, cancellationToken))
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            db.Discounts.Add(new Discount(
+                systemDiscountName, DiscountType.FixedAmount, 0.01m, today.AddYears(-5), today.AddYears(50)));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        var demoCustomer = await db.Customers.OrderBy(c => c.Id).FirstOrDefaultAsync(cancellationToken);
+        if (demoCustomer is not null && demoCustomer.LoyaltyPoints == 0)
+        {
+            demoCustomer.AddLoyaltyPoints(500);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (demoCustomer is not null && !await db.Reviews.AnyAsync(cancellationToken))
+        {
+            var branchId = await db.Branches.OrderBy(b => b.Id).Select(b => b.Id).FirstOrDefaultAsync(cancellationToken);
+            if (branchId > 0)
+            {
+                db.Reviews.Add(Review.Create(
+                    demoCustomer.Id, branchId, 5, "Excelente servicio.", DateOnly.FromDateTime(DateTime.UtcNow)));
                 await db.SaveChangesAsync(cancellationToken);
             }
         }
