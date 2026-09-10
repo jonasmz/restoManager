@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Application.Common;
 using RestoManager.Business.Application.Customers;
+using RestoManager.Business.Application.Deliveries;
 using RestoManager.Business.Application.DiningRoom.Floor;
 using RestoManager.Business.Application.DiningRoom.Reservations;
 using RestoManager.Business.Application.DiningRoom.Sessions;
@@ -92,6 +93,16 @@ public static class DependencyInjection
         services.AddScoped<SaveDiscountHandler>();
         services.AddScoped<ListDiscountsHandler>();
         services.AddScoped<GetDiscountHandler>();
+
+        // Delivery (Fase 7)
+        services.AddScoped<SaveDriverHandler>();
+        services.AddScoped<ListDriversHandler>();
+        services.AddScoped<GetDriverHandler>();
+        services.AddScoped<ListDeliveriesHandler>();
+        services.AddScoped<GetDeliveryHandler>();
+        services.AddScoped<AssignDriverHandler>();
+        services.AddScoped<AdvanceDeliveryHandler>();
+        services.AddScoped<CancelDeliveryHandler>();
 
         // Clientes (alta rápida — Fase 8 se hace dueña)
         services.AddScoped<SaveCustomerHandler>();

@@ -5,6 +5,7 @@ using RestoManager.Business.Application.Sales.Consumption;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
 using RestoManager.Business.Domain.Customers;
+using RestoManager.Business.Domain.Delivery;
 using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Menu;
 using RestoManager.Business.Domain.Organization;
@@ -32,10 +33,13 @@ public sealed record OrderDto(
 
 /// <summary>
 /// Abre un pedido en la sucursal activa con canal explícito. El empleado es el del
-/// token. MESA exige <paramref name="TableId"/>; los demás canales lo rechazan
-/// (junto con <paramref name="TableSessionId"/>).
+/// token. MESA exige <paramref name="TableId"/> y rechaza el resto; DELIVERY exige
+/// <paramref name="DeliveryAddress"/> + <paramref name="EstimatedTime"/> +
+/// <paramref name="DriverId"/> y crea la entrega en la misma transacción (DOM-08).
 /// </summary>
-public sealed record CreateOrderCommand(string Channel, int? TableId, int? TableSessionId, int? CustomerId);
+public sealed record CreateOrderCommand(
+    string Channel, int? TableId, int? TableSessionId, int? CustomerId,
+    string? DeliveryAddress = null, DateTime? EstimatedTime = null, int? DriverId = null);
 
 public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
 {
@@ -55,10 +59,27 @@ public sealed class CreateOrderValidator : AbstractValidator<CreateOrderCommand>
         RuleFor(x => x.TableSessionId)
             .Null().When(x => !IsMesa(x.Channel), ApplyConditionTo.CurrentValidator)
             .WithMessage("Solo un pedido de canal MESA puede indicar una sesión de mesa.");
+
+        // DOM-08: DELIVERY exige los datos de entrega; el resto de canales los rechaza.
+        RuleFor(x => x.DeliveryAddress)
+            .NotEmpty().MaximumLength(255).When(x => IsDelivery(x.Channel))
+            .WithMessage("Un pedido DELIVERY requiere la dirección de entrega.");
+        RuleFor(x => x.EstimatedTime)
+            .NotNull().When(x => IsDelivery(x.Channel))
+            .WithMessage("Un pedido DELIVERY requiere la hora estimada de entrega.");
+        RuleFor(x => x.DriverId)
+            .NotNull().GreaterThan(0).When(x => IsDelivery(x.Channel))
+            .WithMessage("Un pedido DELIVERY requiere un repartidor.");
+        RuleFor(x => x.DeliveryAddress).Null().When(x => !IsDelivery(x.Channel), ApplyConditionTo.CurrentValidator);
+        RuleFor(x => x.EstimatedTime).Null().When(x => !IsDelivery(x.Channel), ApplyConditionTo.CurrentValidator);
+        RuleFor(x => x.DriverId).Null().When(x => !IsDelivery(x.Channel), ApplyConditionTo.CurrentValidator);
     }
 
     private static bool IsMesa(string? channel) =>
         OrderChannelExtensions.TryFromDbValue(channel, out var c) && c == OrderChannel.Mesa;
+
+    private static bool IsDelivery(string? channel) =>
+        OrderChannelExtensions.TryFromDbValue(channel, out var c) && c == OrderChannel.Delivery;
 }
 
 public sealed class CreateOrderHandler(
@@ -67,6 +88,8 @@ public sealed class CreateOrderHandler(
     ITableSessionRepository sessions,
     IEmployeeRepository employees,
     ICustomerRepository customers,
+    IDeliveryRepository deliveries,
+    IDeliveryDriverRepository drivers,
     IUnitOfWork unitOfWork,
     IBranchContext branchContext,
     ICurrentUser currentUser,
@@ -142,6 +165,26 @@ public sealed class CreateOrderHandler(
 
         var order = Order.Create(
             channel, branchId, currentUser.EmployeeId, clock.UtcNow, tableId, tableSessionId, command.CustomerId);
+
+        if (channel == OrderChannel.Delivery)
+        {
+            var driverId = command.DriverId!.Value;
+            if (!await drivers.ExistsAsync(driverId, ct))
+            {
+                throw new NotFoundException("repartidor", driverId);
+            }
+
+            // DOM-08: pedido y entrega se crean en la misma transacción.
+            await unitOfWork.ExecuteInTransactionAsync(async token =>
+            {
+                orders.Add(order);
+                await unitOfWork.SaveChangesAsync(token); // materializa order.Id para la FK de la entrega
+                deliveries.Add(Delivery.Create(
+                    order.Id, driverId, command.DeliveryAddress!, command.EstimatedTime!.Value));
+            }, ct);
+            return order.Id;
+        }
+
         orders.Add(order);
         await unitOfWork.SaveChangesAsync(ct);
         return order.Id;
@@ -409,12 +452,20 @@ public sealed class RegisterPaymentHandler(
 
 // ─────────────────────────── Cierre y cancelación (Fase 6b) ───────────────────────────
 
-public sealed class CloseOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, BranchAccessGuard access)
+public sealed class CloseOrderHandler(
+    IOrderRepository orders, IDeliveryRepository deliveries, IUnitOfWork unitOfWork, BranchAccessGuard access)
 {
     public async Task HandleAsync(int orderId, CancellationToken ct = default)
     {
         var order = await orders.GetAsync(orderId, ct) ?? throw new NotFoundException("pedido", orderId);
         access.EnsureCanOperate(order.BranchId);
+
+        // DOM-08: red de seguridad — un pedido DELIVERY no se cierra sin su entrega.
+        if (order.Channel == OrderChannel.Delivery && !await deliveries.ExistsForOrderAsync(order.Id, ct))
+        {
+            throw new DomainRuleException(
+                "sales.delivery_missing", "El pedido DELIVERY no tiene una entrega asociada.");
+        }
 
         order.CloseOrder();
         await unitOfWork.SaveChangesAsync(ct);

@@ -4,6 +4,7 @@ using RestoManager.Business.Domain.Customers;
 using RestoManager.Business.Domain.DiningRoom;
 using RestoManager.Business.Domain.Inventory;
 using RestoManager.Business.Domain.Menu;
+using RestoManager.Business.Domain.Delivery;
 using RestoManager.Business.Domain.Organization;
 using RestoManager.Business.Domain.Sales;
 using RestoManager.Business.Domain.Tax;
@@ -25,6 +26,28 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         await SeedOrganizationAsync(cancellationToken);
         await SeedDiningRoomAsync(cancellationToken);
         await SeedSalesAsync(cancellationToken);
+        await SeedDeliveryAsync(cancellationToken);
+    }
+
+    /// <summary>Fase 7: un repartidor demo (empleado existente) para probar el canal DELIVERY.</summary>
+    private async Task SeedDeliveryAsync(CancellationToken cancellationToken)
+    {
+        if (await db.DeliveryDrivers.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var employeeId = await db.Employees.OrderBy(e => e.Id).Select(e => e.Id).Skip(1)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (employeeId == 0)
+        {
+            employeeId = await db.Employees.OrderBy(e => e.Id).Select(e => e.Id).FirstOrDefaultAsync(cancellationToken);
+        }
+        if (employeeId > 0)
+        {
+            db.DeliveryDrivers.Add(new DeliveryDriver(employeeId, VehicleType.Motorcycle, "DEMO-001"));
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private async Task SeedOrganizationAsync(CancellationToken cancellationToken)

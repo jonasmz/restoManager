@@ -23,7 +23,10 @@ public static class SalesEndpoints
         group.MapPost("/orders", async (CreateOrderRequest b, CreateOrderHandler h, CancellationToken ct) =>
         {
             var id = await h.HandleAsync(
-                new CreateOrderCommand(b.Channel, b.TableId, b.TableSessionId, b.CustomerId), ct);
+                new CreateOrderCommand(
+                    b.Channel, b.TableId, b.TableSessionId, b.CustomerId,
+                    b.DeliveryAddress, b.EstimatedTime, b.DriverId),
+                ct);
             return Results.Created($"/api/v1/orders/{id}", new CreatedIdResponse(id));
         });
 
