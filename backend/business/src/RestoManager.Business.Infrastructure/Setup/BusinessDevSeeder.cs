@@ -28,6 +28,36 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         await SeedSalesAsync(cancellationToken);
         await SeedDeliveryAsync(cancellationToken);
         await SeedLoyaltyAsync(cancellationToken);
+        await SeedReorderPointsAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Fase 9: puntos de reposición demo para que el reporte de bajo stock tenga datos.
+    /// Idempotente: solo toca insumos conocidos que aún estén en 0.
+    /// </summary>
+    private async Task SeedReorderPointsAsync(CancellationToken cancellationToken)
+    {
+        var defaults = new Dictionary<string, decimal>
+        {
+            ["Harina"] = 20m,
+            ["Tomate"] = 15m,
+            ["Mozzarella"] = 60m,
+        };
+
+        var pending = await db.Ingredients
+            .Where(i => i.ReorderPoint == 0m && defaults.Keys.Contains(i.Name))
+            .ToListAsync(cancellationToken);
+
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var ingredient in pending)
+        {
+            ingredient.SetReorderPoint(defaults[ingredient.Name]);
+        }
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>Fase 7: un repartidor demo (empleado existente) para probar el canal DELIVERY.</summary>
@@ -116,9 +146,10 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         var iva = new TaxRate("IVA 21%", 21m);
         db.TaxRates.Add(iva);
 
-        var harina = new Ingredient("Harina", "kg", 0.90m);
-        var tomate = new Ingredient("Tomate", "kg", 1.40m);
-        var mozzarella = new Ingredient("Mozzarella", "kg", 6.50m);
+        // reorderPoint > 0 ⇒ entra en el reporte de bajo stock cuando el saldo cae (Fase 9).
+        var harina = new Ingredient("Harina", "kg", 0.90m, reorderPoint: 20m);
+        var tomate = new Ingredient("Tomate", "kg", 1.40m, reorderPoint: 15m);
+        var mozzarella = new Ingredient("Mozzarella", "kg", 6.50m, reorderPoint: 60m);
         db.Ingredients.AddRange(harina, tomate, mozzarella);
         await db.SaveChangesAsync(cancellationToken);
 

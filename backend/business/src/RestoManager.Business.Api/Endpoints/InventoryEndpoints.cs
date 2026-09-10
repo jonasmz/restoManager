@@ -23,14 +23,14 @@ public static class InventoryEndpoints
         group.MapPost("/ingredients", async (
             CreateIngredientRequest body, CreateIngredientHandler handler, CancellationToken ct) =>
         {
-            var id = await handler.HandleAsync(new CreateIngredientCommand(body.Name, body.Unit, body.UnitPrice), ct);
+            var id = await handler.HandleAsync(new CreateIngredientCommand(body.Name, body.Unit, body.UnitPrice, body.ReorderPoint), ct);
             return Results.Created($"/api/v1/ingredients/{id}", new CreatedIdResponse(id));
         });
 
         group.MapPut("/ingredients/{id:int}", async (
             int id, UpdateIngredientRequest body, UpdateIngredientHandler handler, CancellationToken ct) =>
         {
-            await handler.HandleAsync(new UpdateIngredientCommand(id, body.Name, body.Unit, body.UnitPrice), ct);
+            await handler.HandleAsync(new UpdateIngredientCommand(id, body.Name, body.Unit, body.UnitPrice, body.ReorderPoint), ct);
             return Results.NoContent();
         });
 

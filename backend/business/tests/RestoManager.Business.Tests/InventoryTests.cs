@@ -155,6 +155,30 @@ public class PurchaseOrderTests
             PurchaseOrder.Draft(1, 1, new DateOnly(2026, 9, 9), []));
 }
 
+public class IngredientReorderPointTests
+{
+    [Fact]
+    public void Defaults_to_zero_and_can_be_set()
+    {
+        var i = new Ingredient("Harina", "kg", 0.90m);
+        Assert.Equal(0m, i.ReorderPoint);
+
+        i.SetReorderPoint(15.5m);
+        Assert.Equal(15.5m, i.ReorderPoint);
+    }
+
+    [Fact]
+    public void Constructor_takes_reorder_point()
+        => Assert.Equal(20m, new Ingredient("Tomate", "kg", 1.40m, reorderPoint: 20m).ReorderPoint);
+
+    [Fact]
+    public void Negative_reorder_point_is_rejected()
+    {
+        var i = new Ingredient("Sal", "kg", 0.10m);
+        Assert.Throws<ArgumentOutOfRangeException>(() => i.SetReorderPoint(-1m));
+    }
+}
+
 public class MovementTypeTests
 {
     [Theory]

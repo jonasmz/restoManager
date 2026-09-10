@@ -12,6 +12,7 @@ internal sealed class IngredientConfig : IEntityTypeConfiguration<Ingredient>
         b.Property(x => x.Name).HasMaxLength(100).IsRequired();
         b.Property(x => x.Unit).HasMaxLength(20).IsRequired();
         b.Property(x => x.UnitPrice).Money();
+        b.Property(x => x.ReorderPoint).Money().HasDefaultValue(0m);
     }
 }
 
