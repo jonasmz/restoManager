@@ -86,15 +86,36 @@ endpoint quedan pendientes de ese arnés compartido.
 ## Frontend (Fase 11b)
 
 Ruta pública `carta/:slug` **fuera** del shell (`Layout`) y sin guard, hermana de
-`auth/signin`. Nueva carpeta `features/catalog/` con `catalog-page`, `catalog.models`,
-`catalog-api.service` (sobre `HttpBackend`, sin interceptores de token/branch) y
-`cart.service` (signals + `computed` total, persistido en `localStorage`).
-En el admin: subida de imagen en la ficha del plato; en la sucursal, campo de slug +
-URL pública + QR (`<canvas>`, descarga PNG; dependencia `qrcode` a aprobar).
+`auth/signin`. Nueva carpeta `features/catalog/`:
+
+- `catalog-api.service` — `HttpClient` sobre `HttpBackend` (sin interceptores de
+  token/branch); expone `imageUrl()` para anteponer la base de la API.
+- `cart.service` — carrito de estimación con signals + `computed` `total`/`count`,
+  persistido en `localStorage` bajo `rm.cart.<slug>`.
+- `catalog-page` — página propia (sin shell). Encabezado, buscador (nombre +
+  descripción + ingredientes, sin acentos), filtro por categoría, grid de cards con
+  imagen/placeholder, y carrito fijo en escritorio / `offcanvas` propio en móvil con
+  botón flotante. Total estimado con `CurrencyPipe` (ARS/es-AR).
+
+Admin:
+
+- `menu-item-detail-page` — tarjeta "Imagen" (subir/quitar, preview) cuando el plato
+  ya existe. Se corrige de paso `@if (!isNew)` → `@if (!isNew())` (las tarjetas de
+  coste y disponibilidad no se mostraban por ese bug).
+- `menu-items-page` — miniatura en la tabla.
+- `branches-page` — tarjeta "Carta pública (QR)": slug (guardar/quitar, maneja 409),
+  enlace público con copiar, QR renderado con `qrcode-generator` (dependencia nueva,
+  CommonJS como `exceljs`) y descarga PNG vía canvas.
 
 | Ruta | Componente | Acceso |
 |---|---|---|
 | `/carta/:slug` | `CatalogPage` | Público, sin shell |
+
+### Nota sobre pruebas del frontend
+
+No hay specs en el frontend en ninguna fase (0–11); el runner
+(`@angular/build:unit-test`) está sin configurar. Se valida con `ng lint` + `ng build`
+limpios y prueba manual en el navegador, como el resto del proyecto.
 
 ## Criterios de aceptación
 
@@ -128,8 +149,10 @@ URL pública + QR (`<canvas>`, descarga PNG; dependencia `qrcode` a aprobar).
 - `feat/fase-11b-carta-publica-frontend` → `feat(fase-11b): frontend de carta pública
   (QR, filtros, carrito) + subida de imágenes de plato`
 
-## Estado
+## Estado — Fase 11 COMPLETA
 
-- Fase 11a: backend implementado (dominio, almacenamiento, endpoints admin y público,
-  migración, semilla, pruebas de dominio y aplicación).
-- Fase 11b: pendiente.
+- Fase 11a (PR #30): backend — dominio, almacenamiento, endpoints admin y público,
+  migración `Fase11CartaPublica`, semilla, pruebas de dominio y aplicación.
+- Fase 11b: frontend — carta pública `/carta/:slug` con filtro, buscador y carrito;
+  subida de imagen de plato; slug + QR en la ficha de sucursal. `ng lint` + `ng build`
+  limpios; verificado en el navegador.

@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
+import { environment } from '../../core/config/environment';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { InventoryApiService } from '../inventory/inventory-api.service';
 import { Ingredient } from '../inventory/inventory.models';
@@ -93,7 +94,27 @@ import { Category, MenuItemAvailability, MenuItemCost, TaxRate } from './menu.mo
             </div>
           </div>
 
-          @if (!isNew) {
+          @if (!isNew()) {
+            <div class="card mb-4">
+              <div class="card-body">
+                <h2 class="fs-6 mb-3">Imagen</h2>
+                @if (imageUrl(); as url) {
+                  <img [src]="url" alt="Imagen del plato" class="img-fluid rounded mb-2" style="max-height: 12rem" />
+                } @else {
+                  <p class="text-secondary small mb-2">Sin imagen. Se muestra en la carta pública.</p>
+                }
+                <div class="d-flex gap-2 align-items-center">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm"
+                    (change)="onImageSelected($event)" [disabled]="uploadingImage()" />
+                  @if (imageUrl()) {
+                    <button type="button" class="btn btn-light btn-sm text-danger" (click)="removeImage()"
+                      [disabled]="uploadingImage()"><i class="ti ti-trash"></i></button>
+                  }
+                </div>
+                <p class="text-secondary mt-1 mb-0" style="font-size: .75rem">JPG, PNG o WebP · máx. 2 MB.</p>
+              </div>
+            </div>
+
             <div class="card mb-4">
               <div class="card-body">
                 <h2 class="fs-6 mb-3">Coste teórico</h2>
@@ -157,6 +178,8 @@ export class MenuItemDetailPage implements OnInit {
   protected readonly selectedTaxes = signal<Set<number>>(new Set());
   protected readonly cost = signal<MenuItemCost | null>(null);
   protected readonly availability = signal<MenuItemAvailability | null>(null);
+  protected readonly imageUrl = signal<string | null>(null);
+  protected readonly uploadingImage = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
@@ -199,6 +222,7 @@ export class MenuItemDetailPage implements OnInit {
           this.recipe.push(this.lineGroup(r.ingredientId, r.quantityRequired));
         }
         this.selectedTaxes.set(new Set(m.taxRateIds));
+        this.imageUrl.set(m.imageUrl ? `${environment.businessApiUrl}${m.imageUrl}` : null);
       },
       error: (err) => this.error.set(apiErrorMessage(err)),
     });
@@ -210,6 +234,43 @@ export class MenuItemDetailPage implements OnInit {
     return this.fb.nonNullable.group({
       ingredientId: [ingredientId, [Validators.required, Validators.min(1)]],
       quantityRequired: [quantityRequired, [Validators.required, Validators.min(0.0001)]],
+    });
+  }
+
+  protected onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    this.uploadingImage.set(true);
+    this.error.set(null);
+    this.api.uploadMenuItemImage(Number(this.id()), file).subscribe({
+      next: (r) => {
+        this.uploadingImage.set(false);
+        this.imageUrl.set(`${environment.businessApiUrl}${r.imageUrl}`);
+        this.message.set('Imagen actualizada.');
+        input.value = '';
+      },
+      error: (err) => {
+        this.uploadingImage.set(false);
+        this.error.set(apiErrorMessage(err));
+        input.value = '';
+      },
+    });
+  }
+
+  protected removeImage(): void {
+    this.uploadingImage.set(true);
+    this.api.deleteMenuItemImage(Number(this.id())).subscribe({
+      next: () => {
+        this.uploadingImage.set(false);
+        this.imageUrl.set(null);
+      },
+      error: (err) => {
+        this.uploadingImage.set(false);
+        this.error.set(apiErrorMessage(err));
+      },
     });
   }
 

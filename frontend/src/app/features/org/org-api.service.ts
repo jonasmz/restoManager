@@ -30,10 +30,14 @@ export class OrgApiService {
   listBranches(): Observable<Paged<Branch>> {
     return this.http.get<Paged<Branch>>(`${this.base}/branches`, { params: new HttpParams().set('pageSize', 100) });
   }
-  saveBranch(body: Omit<Branch, 'id'>, id?: number): Observable<unknown> {
+  saveBranch(body: Omit<Branch, 'id' | 'publicSlug'>, id?: number): Observable<unknown> {
     return id
       ? this.http.put(`${this.base}/branches/${id}`, body)
       : this.http.post<CreatedId>(`${this.base}/branches`, body);
+  }
+  /** Fija (string) o quita (null) el slug público de la carta. Fase 11. */
+  setBranchPublicSlug(id: number, slug: string | null): Observable<unknown> {
+    return this.http.put(`${this.base}/branches/${id}/public-slug`, { slug });
   }
 
   // ---- Puestos / roles ----

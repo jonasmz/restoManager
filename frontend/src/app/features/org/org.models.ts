@@ -23,6 +23,8 @@ export interface Branch {
   email: string;
   openingTime: string; // "HH:mm:ss"
   closingTime: string;
+  /** Slug de la carta pública / QR, o `null` si la sucursal no publica carta (Fase 11). */
+  publicSlug: string | null;
 }
 
 export interface Role {
