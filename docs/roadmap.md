@@ -39,6 +39,7 @@ ejecutarla sin ambigüedad.
 | [8 — Clientes y fidelización](roadmap/fase-08-clientes-fidelizacion.md) | Clientes, puntos de fidelidad, gift cards (emisión/canje), reseñas | `customers`, `reviews`, `gift_cards`, `gift_card_transactions` | §3, CUS-*, §3.3 | 6 | **Hecha** (PR #22 backend, #23 frontend). Fidelidad: 1 pt/unidad al cerrar, canje 100 pts = 1 unidad (`Loyalty:RedeemRate`); gift cards con `customer_id` obligatorio y sin recarga; sin entidades anónimas. POS: selector «Identificar cliente» + canje de puntos desde el pedido abierto |
 | [9 — Dashboard y reportes](roadmap/fase-09-dashboard-reportes.md) | Métricas derivadas de datos transaccionales; dashboard y reportes del template con datos reales | *(solo lectura + `ingredients.reorder_point`)* | §8, §12, MET-01/02 | 6, 7, 8 | **Hecha** (PR #24 backend, #25 frontend). REST `/api/v1/reports/*`; venta efectiva = PAID+CLOSED; pagos CONFIRMED; bajo stock por `ingredients.reorder_point`. Frontend: dashboard + reportes con `ng-apexcharts`, locale `es-AR`/`$`, export CSV/XLSX por tabla |
 | [10 — Exportación de reportes a PDF](roadmap/fase-10-export-pdf.md) | Endpoint(s) de PDF server-side con plantilla propia (QuestPDF) para reportes branded/reproducibles | *(solo lectura)* | §8 | 9 | **Hecha** (PR #26). 9 rutas `/api/v1/reports/**/pdf` (QuestPDF, encabezado con restaurante/sucursal/CUIT/período, es-AR); botones PDF en panel y reportes |
+| [11 — Carta pública / QR](roadmap/fase-11-carta-publica.md) | Carta pública por sucursal accesible por QR: filtro por categoría, buscador, cards con imagen/ingredientes/precio y carrito de estimación | *(desvío: `menu_items.image_key`, `branches.public_slug` + almacén de imágenes)* | — (alcance nuevo) | 2, 4 | Backend en curso (`feat/fase-11a-*`). Endpoint anónimo `/api/v1/public/catalog/{slug}`; imágenes servidas en `/media/menu`; disponibilidad por sucursal respetada. Frontend (11b) pendiente |
 
 ## Grafo de dependencias
 
@@ -57,6 +58,8 @@ flowchart TD
     F6 --> F9[9 · Dashboard y reportes]
     F7 --> F9
     F8 --> F9
+    F2 --> F11[11 · Carta pública / QR]
+    F4 --> F11
 ```
 
 ## Cobertura del esquema

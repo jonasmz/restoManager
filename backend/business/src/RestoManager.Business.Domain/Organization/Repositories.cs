@@ -12,6 +12,10 @@ public interface IBranchRepository
 {
     Task<Branch?> GetAsync(int id, CancellationToken ct = default);
     Task<bool> ExistsAsync(int id, CancellationToken ct = default);
+
+    /// <summary>Sucursal cuyo <see cref="Branch.PublicSlug"/> coincide (carta pública, Fase 11).</summary>
+    Task<Branch?> GetByPublicSlugAsync(string slug, CancellationToken ct = default);
+
     Task<IReadOnlyList<Branch>> ListAsync(int? restaurantId, int skip, int take, CancellationToken ct = default);
     Task<int> CountAsync(int? restaurantId, CancellationToken ct = default);
     void Add(Branch branch);

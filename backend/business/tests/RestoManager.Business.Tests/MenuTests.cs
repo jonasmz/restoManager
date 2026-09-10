@@ -53,6 +53,23 @@ public class MenuItemRecipeTests
         var ex = Assert.Throws<DomainRuleException>(() => NewItem().SetPrice(-0.01m));
         Assert.Equal("menu.invalid_price", ex.Code);
     }
+
+    [Fact]
+    public void SetImage_then_ClearImage()
+    {
+        var item = NewItem();
+        Assert.Null(item.ImageKey);
+
+        item.SetImage("  abc123.webp  ");
+        Assert.Equal("abc123.webp", item.ImageKey);
+
+        item.ClearImage();
+        Assert.Null(item.ImageKey);
+    }
+
+    [Fact]
+    public void SetImage_rejects_blank_key()
+        => Assert.Throws<ArgumentException>(() => NewItem().SetImage("   "));
 }
 
 public class KitchenStationTests

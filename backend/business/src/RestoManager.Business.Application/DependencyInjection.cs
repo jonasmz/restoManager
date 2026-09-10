@@ -124,6 +124,7 @@ public static class DependencyInjection
         services.AddScoped<SaveBranchHandler>();
         services.AddScoped<ListBranchesHandler>();
         services.AddScoped<GetBranchHandler>();
+        services.AddScoped<SetBranchPublicSlugHandler>();
         services.AddScoped<SaveRoleHandler>();
         services.AddScoped<ListRolesHandler>();
         services.AddScoped<GetRoleHandler>();
@@ -146,6 +147,8 @@ public static class DependencyInjection
         services.AddScoped<GetMenuItemCostHandler>();
         services.AddScoped<GetMenuItemAvailabilityHandler>();
         services.AddScoped<SetMenuItemAvailabilityHandler>();
+        services.AddScoped<SetMenuItemImageHandler>();
+        services.AddScoped<ClearMenuItemImageHandler>();
         services.AddScoped<SaveKitchenStationHandler>();
         services.AddScoped<ListKitchenStationsHandler>();
         services.AddScoped<GetKitchenStationHandler>();
@@ -158,6 +161,9 @@ public static class DependencyInjection
 
         // Reportes (Fase 9/10)
         services.AddScoped<Reports.ReportDocumentBuilder>();
+
+        // Carta pública / QR (Fase 11)
+        services.AddScoped<PublicCatalog.GetPublicCatalogHandler>();
 
         return services;
     }

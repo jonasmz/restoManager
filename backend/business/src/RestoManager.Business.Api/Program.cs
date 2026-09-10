@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using QuestPDF.Infrastructure;
 using RestoManager.Business.Api;
 using RestoManager.Business.Api.Auth;
@@ -14,6 +15,13 @@ using RestoManager.Business.Infrastructure.Persistence;
 QuestPDF.Settings.License = LicenseType.Community; // Fase 10: PDF de reportes.
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Fase 11: directorio del almacén de imágenes de la carta. Se resuelve a ruta absoluta y
+// se guarda en la config para que la infraestructura y `UseStaticFiles` usen el mismo valor.
+var menuImagesPath = Path.GetFullPath(builder.Configuration["Storage:MenuImagesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "media", "menu"));
+builder.Configuration["Storage:MenuImagesPath"] = menuImagesPath;
+Directory.CreateDirectory(menuImagesPath);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -75,6 +83,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+// Fase 11: imágenes de la carta, públicas, servidas fuera del muro de auth.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(menuImagesPath),
+    RequestPath = "/media/menu",
+});
+
 if (authEnabled)
 {
     app.UseAuthentication();
@@ -83,6 +98,9 @@ if (authEnabled)
 
 app.MapHealthChecks("/health");
 app.MapGet("/", () => Results.Ok(new { service = "RestoManager.Business.Api", status = "ok" }));
+
+// Carta pública / QR (Fase 11): endpoints anónimos, siempre mapeados.
+app.MapPublicCatalogEndpoints();
 
 if (authEnabled)
 {

@@ -50,6 +50,14 @@ public static class OrganizationEndpoints
             return Results.NoContent();
         });
 
+        // Slug público de la carta accesible por QR (Fase 11).
+        admin.MapPut("/branches/{id:int}/public-slug", async (
+            int id, SetBranchPublicSlugRequest b, SetBranchPublicSlugHandler h, CancellationToken ct) =>
+        {
+            await h.HandleAsync(new SetBranchPublicSlugCommand(id, b.Slug), ct);
+            return Results.NoContent();
+        });
+
         // ---- Roles / puestos (global) ----
         staff.MapGet("/roles", async (int? page, int? pageSize, ListRolesHandler h, CancellationToken ct) =>
             Results.Ok(await h.HandleAsync(new ListRolesQuery(page ?? 1, pageSize ?? 20), ct)));

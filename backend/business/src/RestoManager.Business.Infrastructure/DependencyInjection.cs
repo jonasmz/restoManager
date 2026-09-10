@@ -34,6 +34,11 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<BusinessDevSeeder>();
 
+        // Fase 11: almacén de imágenes de la carta (sistema de archivos / volumen).
+        var menuImagesPath = configuration["Storage:MenuImagesPath"]
+            ?? Path.Combine(AppContext.BaseDirectory, "media", "menu");
+        services.AddSingleton<IImageStorage>(_ => new Storage.LocalImageStorage(menuImagesPath));
+
         // TBL-02: ventana que convierte una reserva CONFIRMED en RESERVED (configurable).
         var windowSection = configuration.GetSection("Salon:ReservationWindow");
         services.AddSingleton(ReservationWindow.FromMinutes(

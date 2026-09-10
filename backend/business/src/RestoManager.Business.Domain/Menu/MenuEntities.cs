@@ -54,6 +54,12 @@ public sealed class MenuItem
     public decimal Price { get; private set; }
     public bool IsAvailable { get; private set; } = true;
 
+    /// <summary>
+    /// Clave de la imagen ilustrativa del plato (nombre de archivo en el almacén de
+    /// imágenes, Fase 11). <c>null</c> = sin imagen. La URL pública se deriva de la clave.
+    /// </summary>
+    public string? ImageKey { get; private set; }
+
     public IReadOnlyList<RecipeItem> Recipe => _recipe;
     public IReadOnlyList<MenuItemTax> Taxes => _taxes;
 
@@ -90,6 +96,12 @@ public sealed class MenuItem
         }
         Price = price;
     }
+
+    /// <summary>Asocia la imagen identificada por <paramref name="key"/> (Fase 11).</summary>
+    public void SetImage(string key) => ImageKey = MenuGuard.NotBlank(key, nameof(key));
+
+    /// <summary>Quita la imagen del plato.</summary>
+    public void ClearImage() => ImageKey = null;
 
     /// <summary>
     /// Reemplaza toda la receta. Rechaza ingredientes repetidos (§7.5,

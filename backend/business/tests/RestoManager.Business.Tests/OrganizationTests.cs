@@ -74,3 +74,41 @@ public class OrgEntityValidationTests
         Assert.Throws<ArgumentException>(() => new Restaurant("Demo", "  ", "", "", ""));
     }
 }
+
+public class BranchPublicSlugTests
+{
+    private static Branch NewBranch() =>
+        new(1, "Centro", "Calle 1", "", "", new TimeOnly(8, 0), new TimeOnly(23, 0));
+
+    [Fact]
+    public void Sets_and_normalizes_slug_to_lowercase()
+    {
+        var branch = NewBranch();
+        branch.SetPublicSlug("  Centro-Norte  ");
+        Assert.Equal("centro-norte", branch.PublicSlug);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Blank_clears_slug(string? value)
+    {
+        var branch = NewBranch();
+        branch.SetPublicSlug("centro");
+        branch.SetPublicSlug(value);
+        Assert.Null(branch.PublicSlug);
+    }
+
+    [Theory]
+    [InlineData("ab")]             // muy corto
+    [InlineData("-centro")]        // guion al inicio
+    [InlineData("centro-")]        // guion al final
+    [InlineData("centro norte")]   // espacio
+    [InlineData("Centro_Norte")]   // guion bajo
+    public void Rejects_invalid_format(string value)
+    {
+        var ex = Assert.Throws<DomainRuleException>(() => NewBranch().SetPublicSlug(value));
+        Assert.Equal("branch.invalid_slug", ex.Code);
+    }
+}

@@ -24,11 +24,40 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         await SeedOrganizationAsync(cancellationToken);
+        await SeedBranchPublicSlugsAsync(cancellationToken);
         await SeedDiningRoomAsync(cancellationToken);
         await SeedSalesAsync(cancellationToken);
         await SeedDeliveryAsync(cancellationToken);
         await SeedLoyaltyAsync(cancellationToken);
         await SeedReorderPointsAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Fase 11: slug público de la carta por QR. Idempotente: solo asigna a las sucursales
+    /// demo conocidas que aún no tengan slug.
+    /// </summary>
+    private async Task SeedBranchPublicSlugsAsync(CancellationToken cancellationToken)
+    {
+        var slugs = new Dictionary<string, string>
+        {
+            ["Sucursal Centro"] = "centro",
+            ["Sucursal Norte"] = "norte",
+        };
+
+        var pending = await db.Branches
+            .Where(b => b.PublicSlug == null && slugs.Keys.Contains(b.Name))
+            .ToListAsync(cancellationToken);
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var branch in pending)
+        {
+            branch.SetPublicSlug(slugs[branch.Name]);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        logger.LogWarning("Semilla Fase 11: slug público asignado a {N} sucursal(es).", pending.Count);
     }
 
     /// <summary>

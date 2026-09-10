@@ -16,6 +16,13 @@ public sealed class DomainRuleException(string code, string message)
     public override int StatusCode => 409;
 }
 
+/// <summary>Entrada del cliente mal formada o fuera de rango (400).</summary>
+public sealed class InvalidInputException(string code, string message)
+    : BusinessException(code, message)
+{
+    public override int StatusCode => 400;
+}
+
 /// <summary>Recurso no encontrado (404).</summary>
 public sealed class NotFoundException(string resource, object key)
     : BusinessException("not_found", $"No se encontró {resource} con clave '{key}'.")

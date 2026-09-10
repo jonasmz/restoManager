@@ -6,6 +6,9 @@ public sealed record SaveBranchRequest(
     int RestaurantId, string Name, string Address, string Phone, string Email,
     TimeOnly OpeningTime, TimeOnly ClosingTime);
 
+/// <summary>Fase 11: <c>null</c> o vacío quita el slug; si no, se normaliza y valida.</summary>
+public sealed record SetBranchPublicSlugRequest(string? Slug);
+
 public sealed record SaveRoleRequest(string Name, string Description, decimal HourlyRate);
 
 public sealed record SaveDepartmentRequest(string Name, string Description);
