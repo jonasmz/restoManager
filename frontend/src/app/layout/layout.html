@@ -99,25 +99,42 @@
     </a>
   </div>
 
-  <ul class="nav flex-column">
-    @for (group of navGroups(); track group.title) {
-      <li class="px-4 pt-4 pb-2"><small class="nav-text text-uppercase text-secondary">{{ group.title }}</small></li>
-      @for (item of group.items; track item.route) {
-        <li>
-          <a
-            class="nav-link"
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: !!item.exact }"
-            (click)="layout.closeMobile()"
+  <nav class="sidebar-nav">
+    <ul class="nav flex-column">
+      @for (group of groups(); track group.title) {
+        <li class="sidebar-group">
+          <button
+            type="button"
+            class="sidebar-group-toggle"
+            [attr.aria-expanded]="group.expanded"
+            (click)="toggleGroup(group.title)"
           >
-            <i [class]="'ti ' + item.icon"></i>
-            <span class="nav-text">{{ item.label }}</span>
-          </a>
+            <small class="nav-text text-uppercase text-secondary">{{ group.title }}</small>
+            <i
+              class="ti nav-text"
+              [class.ti-chevron-down]="group.expanded"
+              [class.ti-chevron-right]="!group.expanded"
+            ></i>
+          </button>
+
+          @if (group.expanded) {
+            @for (item of group.items; track item.route) {
+              <a
+                class="nav-link"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                (click)="layout.closeMobile()"
+              >
+                <i [class]="'ti ' + item.icon"></i>
+                <span class="nav-text">{{ item.label }}</span>
+              </a>
+            }
+          }
         </li>
       }
-    }
-  </ul>
+    </ul>
+  </nav>
 </aside>
 
 <!-- CONTENIDO -->
