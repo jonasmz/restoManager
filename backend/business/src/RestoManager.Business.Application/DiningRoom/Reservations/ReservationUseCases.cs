@@ -160,7 +160,8 @@ public sealed class SeatReservationHandler(
             throw new DomainRuleException("dining.session_already_open", "La mesa ya tiene una sesión abierta.");
         }
 
-        var session = TableSession.Open(table.Id, command.GuestCount, clock.UtcNow);
+        // SES-05: no más comensales que la capacidad de la mesa.
+        var session = TableSession.Open(table.Id, command.GuestCount, table.Capacity, clock.UtcNow);
 
         await unitOfWork.ExecuteInTransactionAsync(_ =>
         {

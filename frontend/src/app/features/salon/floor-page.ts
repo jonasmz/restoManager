@@ -75,8 +75,8 @@ import { FloorTable, TableDisplayStatus } from './salon.models';
             </div>
           } @else if (t.operationalStatus === 'ACTIVE') {
             <form [formGroup]="openForm" (ngSubmit)="openSession(t)" class="row g-2 align-items-end" style="max-width: 22rem">
-              <div class="col-7"><label class="form-label small" for="gc">Comensales</label>
-                <input id="gc" type="number" min="1" class="form-control form-control-sm" formControlName="guestCount" /></div>
+              <div class="col-7"><label class="form-label small" for="gc">Comensales (máx. {{ t.capacity }})</label>
+                <input id="gc" type="number" min="1" [attr.max]="t.capacity" class="form-control form-control-sm" formControlName="guestCount" /></div>
               <div class="col-5"><button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="openForm.invalid">Abrir sesión</button></div>
             </form>
           } @else {
@@ -153,6 +153,8 @@ export class FloorPage {
   protected select(t: FloorTable): void {
     this.message.set(null);
     this.selected.set(this.selected()?.tableId === t.tableId ? null : t);
+    const gc = this.openForm.controls.guestCount;
+    gc.setValidators([Validators.required, Validators.min(1), Validators.max(t.capacity)]);
     this.openForm.reset({ guestCount: Math.min(t.capacity, 2) || 2 });
   }
 

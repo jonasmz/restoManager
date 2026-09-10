@@ -61,7 +61,8 @@ import { Customer, RESERVATION_STATUSES, Reservation, Table } from './salon.mode
                   @if (r.status === 'CONFIRMED') {
                     @if (seatingId() === r.id) {
                       <span class="d-inline-flex gap-1 align-items-center">
-                        <input type="number" min="1" class="form-control form-control-sm" style="width: 5rem"
+                        <input type="number" min="1" [attr.max]="tableCapacity(r.tableId)"
+                          class="form-control form-control-sm" style="width: 5rem"
                           [value]="r.partySize" #gc />
                         <button type="button" class="btn btn-success btn-sm" (click)="seat(r, gc.value)">OK</button>
                         <button type="button" class="btn btn-link btn-sm p-0" (click)="seatingId.set(null)">✕</button>
@@ -181,6 +182,10 @@ export class ReservationsPage {
 
   protected tableNumber(id: number): number | string {
     return this.tables().find((t) => t.id === id)?.number ?? `#${id}`;
+  }
+
+  protected tableCapacity(id: number): number | null {
+    return this.tables().find((t) => t.id === id)?.capacity ?? null;
   }
 
   protected badge(status: string): string {

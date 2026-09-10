@@ -101,12 +101,21 @@ public sealed class TableSession
 
     private TableSession() { }
 
-    /// <summary>SES-04: <c>guest_count &gt; 0</c>.</summary>
-    public static TableSession Open(int tableId, int guestCount, DateTime now)
+    /// <summary>
+    /// SES-04: <c>guest_count &gt; 0</c>. SES-05: <c>guest_count &lt;= tableCapacity</c>
+    /// (la sesión no puede tener más comensales que la capacidad de la mesa).
+    /// </summary>
+    public static TableSession Open(int tableId, int guestCount, int tableCapacity, DateTime now)
     {
         if (guestCount <= 0)
         {
             throw new DomainRuleException("dining.invalid_guest_count", "El número de comensales debe ser mayor que cero.");
+        }
+        if (guestCount > tableCapacity)
+        {
+            throw new DomainRuleException(
+                "dining.guest_count_exceeds_capacity",
+                $"La mesa admite hasta {tableCapacity} comensales.");
         }
         return new TableSession { TableId = tableId, GuestCount = guestCount, OpenedAt = now };
     }

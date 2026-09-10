@@ -104,14 +104,29 @@ public class TableSessionTests
     [Fact]
     public void Open_rejects_non_positive_guest_count()
     {
-        Assert.Throws<DomainRuleException>(() => TableSession.Open(1, 0, Now));
-        Assert.Throws<DomainRuleException>(() => TableSession.Open(1, -3, Now));
+        Assert.Throws<DomainRuleException>(() => TableSession.Open(1, 0, tableCapacity: 4, Now));
+        Assert.Throws<DomainRuleException>(() => TableSession.Open(1, -3, tableCapacity: 4, Now));
+    }
+
+    [Fact]
+    public void Open_rejects_guest_count_over_table_capacity()
+    {
+        var ex = Assert.Throws<DomainRuleException>(() => TableSession.Open(1, 5, tableCapacity: 4, Now));
+        Assert.Equal("dining.guest_count_exceeds_capacity", ex.Code);
+    }
+
+    [Fact]
+    public void Open_allows_guest_count_equal_to_capacity()
+    {
+        var s = TableSession.Open(1, 4, tableCapacity: 4, Now);
+        Assert.Equal(4, s.GuestCount);
+        Assert.True(s.IsOpen);
     }
 
     [Fact]
     public void Close_rejects_time_before_open_and_double_close()
     {
-        var s = TableSession.Open(1, 2, Now);
+        var s = TableSession.Open(1, 2, tableCapacity: 4, Now);
 
         var early = Assert.Throws<DomainRuleException>(() => s.Close(Now.AddMinutes(-1)));
         Assert.Equal("dining.close_before_open", early.Code);
