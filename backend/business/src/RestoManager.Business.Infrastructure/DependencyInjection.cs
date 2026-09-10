@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RestoManager.Business.Application.Abstractions;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Customers;
 using RestoManager.Business.Domain.Delivery;
@@ -38,6 +39,12 @@ public static class DependencyInjection
             int.TryParse(windowSection["BeforeMinutes"], out var before) ? before : 30,
             int.TryParse(windowSection["AfterMinutes"], out var after) ? after : 30));
 
+        // Fase 8, decisión 1: política de fidelidad (acumulación + ratio de canje).
+        var loyaltySection = configuration.GetSection("Loyalty");
+        services.AddSingleton(new LoyaltyPolicy(
+            PointsPerCurrencyUnit: int.TryParse(loyaltySection["PointsPerCurrencyUnit"], out var pts) ? pts : 1,
+            RedeemRate: decimal.TryParse(loyaltySection["RedeemRate"], out var rate) ? rate : 100m));
+
         services.AddScoped<IIngredientRepository, IngredientRepository>();
         services.AddScoped<IBranchInventoryRepository, BranchInventoryRepository>();
         services.AddScoped<IInventoryMovementRepository, InventoryMovementRepository>();
@@ -50,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IReservationRepository, ReservationRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IGiftCardRepository, GiftCardRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IDiscountRepository, DiscountRepository>();
         services.AddScoped<IDeliveryDriverRepository, DeliveryDriverRepository>();

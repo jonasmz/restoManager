@@ -354,13 +354,10 @@ public class GiftCardRedeemTests
 {
     private static readonly DateTime Now = new(2026, 9, 9, 20, 0, 0, DateTimeKind.Unspecified);
 
-    private static GiftCard CardWith(decimal balance)
-    {
-        var card = new GiftCard { CustomerId = 1, CardNumber = "GC-1", ExpiryDate = new DateOnly(2030, 1, 1) };
-        // Balance tiene setter privado; se ajusta por reflexión solo en la prueba.
-        typeof(GiftCard).GetProperty(nameof(GiftCard.Balance))!.SetValue(card, balance);
-        return card;
-    }
+    private static GiftCard CardWith(decimal balance, DateOnly? expiry = null) =>
+        GiftCard.Issue(
+            customerId: 1, cardNumber: "GC-1", initialBalance: balance,
+            expiryDate: expiry ?? new DateOnly(2030, 1, 1), today: new DateOnly(2026, 1, 1));
 
     [Fact]
     public void Redeem_decrements_balance_and_returns_negative_transaction()
@@ -379,6 +376,14 @@ public class GiftCardRedeemTests
         var card = CardWith(10m);
         var ex = Assert.Throws<DomainRuleException>(() => card.Redeem(1, 25m, Now));
         Assert.Equal("sales.gift_card_insufficient", ex.Code);
+    }
+
+    [Fact]
+    public void Redeem_on_expired_card_is_rejected()
+    {
+        var card = CardWith(50m, expiry: new DateOnly(2026, 1, 1)); // caducó antes de Now
+        var ex = Assert.Throws<DomainRuleException>(() => card.Redeem(1, 10m, Now));
+        Assert.Equal("sales.gift_card_expired", ex.Code);
     }
 }
 

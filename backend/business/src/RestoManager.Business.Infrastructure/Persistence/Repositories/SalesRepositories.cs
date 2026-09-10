@@ -33,6 +33,16 @@ public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
         CancellationToken ct = default)
         => Filter(branchId, channel, status, tableSessionId, fromInclusive, toExclusive).CountAsync(ct);
 
+    public async Task<IReadOnlyList<Order>> ListForCustomerAsync(
+        int customerId, int skip, int take, CancellationToken ct = default)
+        => await WithChildren(db.Orders.Where(x => x.CustomerId == customerId))
+            .OrderByDescending(x => x.Id)
+            .Skip(skip).Take(take)
+            .ToListAsync(ct);
+
+    public Task<int> CountForCustomerAsync(int customerId, CancellationToken ct = default)
+        => db.Orders.CountAsync(x => x.CustomerId == customerId, ct);
+
     public void Add(Order order) => db.Orders.Add(order);
 
     private static IQueryable<Order> WithChildren(IQueryable<Order> q) =>
@@ -75,6 +85,9 @@ public sealed class DiscountRepository(BusinessDbContext db) : IDiscountReposito
 {
     public Task<Discount?> GetAsync(int id, CancellationToken ct = default)
         => db.Discounts.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public Task<Discount?> GetByNameAsync(string name, CancellationToken ct = default)
+        => db.Discounts.FirstOrDefaultAsync(x => x.Name == name, ct);
 
     public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
         => db.Discounts.AnyAsync(x => x.Id == id, ct);

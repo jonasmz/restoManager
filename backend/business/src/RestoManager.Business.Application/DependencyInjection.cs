@@ -104,10 +104,18 @@ public static class DependencyInjection
         services.AddScoped<AdvanceDeliveryHandler>();
         services.AddScoped<CancelDeliveryHandler>();
 
-        // Clientes (alta rápida — Fase 8 se hace dueña)
+        // Clientes y fidelización (Fase 8)
         services.AddScoped<SaveCustomerHandler>();
         services.AddScoped<ListCustomersHandler>();
         services.AddScoped<GetCustomerHandler>();
+        services.AddScoped<ListCustomerOrdersHandler>();
+        services.AddScoped<GetCustomerLoyaltyHandler>();
+        services.AddScoped<RedeemLoyaltyPointsHandler>();
+        services.AddScoped<IssueGiftCardHandler>();
+        services.AddScoped<GetGiftCardBalanceHandler>();
+        services.AddScoped<ListCustomerGiftCardsHandler>();
+        services.AddScoped<CreateReviewHandler>();
+        services.AddScoped<ListReviewsHandler>();
 
         // Organización
         services.AddScoped<SaveRestaurantHandler>();

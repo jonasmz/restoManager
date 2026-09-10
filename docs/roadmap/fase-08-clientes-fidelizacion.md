@@ -16,15 +16,31 @@ Identidad persistente del cliente y beneficios:
 
 Fase 6 (pedidos y `gift_card_transactions` como medio de pago).
 
-### Decisiones bloqueantes
+### Decisiones bloqueantes — RESUELTAS (2026-09-09)
 
-1. **Política de fidelidad**: cómo se **acumulan** `loyalty_points` (p. ej. X puntos
-   por unidad monetaria en pedidos `CLOSED`) y cómo se **canjean**.
-2. ¿Emisión de gift card requiere `customer_id`? (el esquema sí lo exige, §3.3).
-   ¿Recarga de saldo permitida? ¿Qué pasa al expirar?
-3. ¿Permitir en el futuro reservas / gift cards / reviews **anónimas**? (hoy el
-   esquema exige `customer_id NOT NULL`; §14). Si se aprueba, es cambio de esquema en
-   otra fase.
+1. **Política de fidelidad**:
+   - **Acumulación**: `1 punto por unidad monetaria` → al cerrar el pedido
+     (`CloseOrder`), si `orders.customer_id` no es NULL, se suman
+     `floor(orders.total_amount)` puntos al cliente, en la misma transacción. Solo
+     una vez (el cierre es terminal). Ventas anónimas no acumulan.
+   - **Canje**: `RedeemLoyaltyPoints(orderId, points)` sobre un pedido `OPEN` con
+     `customer_id`. Convierte puntos en un `OrderDiscount` de importe
+     `round(points / RedeemRate)` (ratio configurable `Loyalty:RedeemRate`,
+     por defecto `100` → 100 pts = 1 unidad monetaria). Resta los puntos al cliente
+     en la misma transacción. Un solo canje por pedido (`UNIQUE(order_id,
+     discount_id)`); se rechaza si el importe supera el total del pedido
+     (`loyalty.redemption_exceeds_total`) o si el cliente no tiene puntos suficientes
+     (`loyalty.insufficient_points`). El canje se apoya en una fila de `discounts` de
+     sistema («Canje de puntos de fidelidad», `FIXED_AMOUNT`) que siembra el seeder
+     de forma idempotente; el importe real se congela en `order_discounts.applied_amount`.
+2. **Gift cards**: la emisión (`IssueGiftCard`) **exige `customer_id`** (como el
+   esquema, §3.3). **Sin recarga**: el saldo solo baja por canje (Fase 6). Tarjeta
+   con `expiry_date < hoy` → `409 sales.gift_card_expired` al canjear (validación
+   añadida en `GiftCard.Redeem`), pero el saldo sigue siendo consultable.
+   `card_number` duplicado → `409 gift_cards.duplicate_card_number`.
+3. **Anónimos**: **NO**. Se mantiene `customer_id NOT NULL` en `reviews`,
+   `gift_cards` y `reservations`; sin cambio de esquema. Solo `orders.customer_id`
+   admite NULL (venta anónima, CUS-02).
 
 ## Backend
 

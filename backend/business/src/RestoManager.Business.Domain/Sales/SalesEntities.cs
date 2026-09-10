@@ -432,6 +432,42 @@ public sealed class Order
         Recalculate();
     }
 
+    /// <summary>
+    /// Canje de puntos de fidelidad como descuento del pedido (Fase 8, decisión 1).
+    /// El importe ya viene calculado por el caso de uso (<c>puntos / ratio</c>) y se
+    /// congela en <see cref="OrderDiscount.AppliedAmount"/>. Se apoya en la fila de
+    /// <c>discounts</c> de sistema (<paramref name="loyaltyDiscountId"/>) para respetar
+    /// la FK; solo se admite un canje por pedido (<c>UNIQUE(order_id, discount_id)</c>).
+    /// </summary>
+    public OrderDiscount ApplyLoyaltyRedemption(int loyaltyDiscountId, decimal amount)
+    {
+        EnsureOpen("canjear puntos de fidelidad");
+
+        if (amount <= 0m)
+        {
+            throw new DomainRuleException(
+                "loyalty.invalid_redemption", "El importe del canje debe ser mayor que cero.");
+        }
+        if (_discounts.Any(d => d.DiscountId == loyaltyDiscountId))
+        {
+            throw new DomainRuleException(
+                "loyalty.already_redeemed", "El pedido ya tiene un canje de puntos aplicado.");
+        }
+
+        var remaining = Money.Round(ItemsSubtotal - DiscountTotal);
+        if (amount > remaining)
+        {
+            throw new DomainRuleException(
+                "loyalty.redemption_exceeds_total",
+                $"El canje ({amount:0.00}) supera el importe pendiente del pedido ({remaining:0.00}).");
+        }
+
+        var row = OrderDiscount.Create(loyaltyDiscountId, Money.Round(amount));
+        _discounts.Add(row);
+        Recalculate();
+        return row;
+    }
+
     // ---- Pagos ----
 
     /// <summary>
