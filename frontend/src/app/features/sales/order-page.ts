@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 
 import { BranchContextService } from '../../core/branch/branch-context.service';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { CustomersApiService } from '../customers/customers-api.service';
 import { MenuApiService } from '../menu/menu-api.service';
 import { Category, MenuItem } from '../menu/menu.models';
 import { SalesApiService } from './sales-api.service';
@@ -150,6 +151,33 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
             </ul>
           </div>
 
+          <!-- Fidelidad -->
+          @if (o.customerId) {
+            <div class="card mb-3">
+              <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span>Fidelidad</span>
+                <span class="badge bg-primary-subtle text-primary">{{ loyaltyPoints() }} puntos</span>
+              </div>
+              <div class="card-body">
+                @if (editable(o)) {
+                  <form [formGroup]="redeemForm" (ngSubmit)="redeem()" class="row g-2">
+                    <div class="col-7">
+                      <input type="number" min="1" step="1" class="form-control form-control-sm"
+                        placeholder="Puntos a canjear" formControlName="points" />
+                    </div>
+                    <div class="col-5">
+                      <button type="submit" class="btn btn-outline-primary btn-sm w-100"
+                        [disabled]="redeemForm.invalid || loyaltyPoints() < 1">Canjear</button>
+                    </div>
+                    <div class="col-12 small text-secondary">100 puntos = 1 de descuento sobre el pedido abierto.</div>
+                  </form>
+                } @else {
+                  <p class="small text-secondary mb-0">El pedido está {{ o.status }}: no admite canje.</p>
+                }
+              </div>
+            </div>
+          }
+
           <!-- Totales -->
           <div class="card mb-3">
             <ul class="list-group list-group-flush">
@@ -235,6 +263,7 @@ export class OrderPage {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(SalesApiService);
   private readonly menuApi = inject(MenuApiService);
+  private readonly customersApi = inject(CustomersApiService);
   protected readonly branch = inject(BranchContextService);
 
   private readonly orderId = Number(this.route.snapshot.paramMap.get('id'));
@@ -247,6 +276,7 @@ export class OrderPage {
   protected readonly pickedDiscount = signal<string>('');
   protected readonly message = signal<string | null>(null);
   protected readonly ok = signal(false);
+  protected readonly loyaltyPoints = signal(0);
 
   protected readonly methods = PAYMENT_METHODS;
 
@@ -254,6 +284,10 @@ export class OrderPage {
     method: ['CASH' as PaymentMethod, Validators.required],
     amount: [0, [Validators.required, Validators.min(0.01)]],
     giftCardId: this.fb.control<number | null>(null),
+  });
+
+  protected readonly redeemForm = this.fb.nonNullable.group({
+    points: [0, [Validators.required, Validators.min(1)]],
   });
 
   private readonly menuById = computed(() => new Map(this.menu().map((m) => [m.id, m])));
@@ -265,7 +299,8 @@ export class OrderPage {
 
   protected readonly applicableDiscounts = computed(() => {
     const used = new Set((this.order()?.discounts ?? []).map((d) => d.discountId));
-    return this.discounts().filter((d) => !used.has(d.id));
+    // El descuento de sistema del canje de puntos no se aplica a mano.
+    return this.discounts().filter((d) => !used.has(d.id) && d.name !== 'Canje de puntos de fidelidad');
   });
 
   constructor() {
@@ -318,6 +353,27 @@ export class OrderPage {
         if (this.payForm.controls.amount.value === 0 || this.payForm.pristine) {
           this.payForm.controls.amount.setValue(o.balance > 0 ? o.balance : 0);
         }
+        if (o.customerId) {
+          this.customersApi.getLoyalty(o.customerId).subscribe({
+            next: (b) => this.loyaltyPoints.set(b.loyaltyPoints),
+          });
+        }
+      },
+      error: (err) => this.fail(err),
+    });
+  }
+
+  protected redeem(): void {
+    const o = this.order();
+    if (this.redeemForm.invalid || !o?.customerId) {
+      return;
+    }
+    const points = Number(this.redeemForm.getRawValue().points);
+    this.customersApi.redeemLoyalty(o.customerId, { orderId: this.orderId, points }).subscribe({
+      next: (r) => {
+        this.redeemForm.reset({ points: 0 });
+        this.loyaltyPoints.set(r.remainingPoints);
+        this.done(`Canjeados ${r.pointsRedeemed} puntos: −${r.discountAmount.toFixed(2)}.`);
       },
       error: (err) => this.fail(err),
     });

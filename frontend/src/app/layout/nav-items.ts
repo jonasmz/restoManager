@@ -71,6 +71,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    title: 'Clientes',
+    items: [
+      { label: 'Clientes', icon: 'ti-users', route: '/customers', exact: true, roles: SALES_ROLES },
+      { label: 'Reseñas', icon: 'ti-star', route: '/reviews', roles: SALES_ROLES },
+    ],
+  },
+  {
     title: 'Menú',
     items: [
       { label: 'Categorías', icon: 'ti-category', route: '/menu/categories', roles: MENU_ROLES },
