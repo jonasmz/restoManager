@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,7 +15,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
 
 @Component({
   selector: 'app-sales-order',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-4">
@@ -64,7 +64,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                       <button type="button" class="card w-100 h-100 text-start border" (click)="addItem(m)">
                         <div class="card-body p-2">
                           <div class="fw-semibold small text-truncate">{{ m.name }}</div>
-                          <div class="text-secondary small">{{ m.price | number: '1.2-2' }}</div>
+                          <div class="text-secondary small">{{ m.price | currency }}</div>
                         </div>
                       </button>
                     </div>
@@ -87,7 +87,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="me-2">
                       <div class="small fw-semibold">{{ menuName(it.menuItemId) }}</div>
-                      <div class="text-secondary" style="font-size: .78rem">{{ it.unitPrice | number: '1.2-2' }} c/u</div>
+                      <div class="text-secondary" style="font-size: .78rem">{{ it.unitPrice | currency }} c/u</div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                       @if (editable(o)) {
@@ -99,7 +99,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                       } @else {
                         <span class="small text-secondary">× {{ it.quantity }}</span>
                       }
-                      <span class="small fw-semibold" style="min-width: 4rem; text-align: right">{{ it.lineTotal | number: '1.2-2' }}</span>
+                      <span class="small fw-semibold" style="min-width: 4rem; text-align: right">{{ it.lineTotal | currency }}</span>
                       @if (editable(o)) {
                         <button type="button" class="btn btn-link btn-sm text-danger p-0" (click)="removeItem(it.id)"><i class="ti ti-x"></i></button>
                       }
@@ -126,7 +126,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                 <li class="list-group-item d-flex justify-content-between align-items-center py-2">
                   <span class="small">{{ discountName(d.discountId) }}</span>
                   <span class="d-flex align-items-center gap-2">
-                    <span class="small text-danger">−{{ d.appliedAmount | number: '1.2-2' }}</span>
+                    <span class="small text-danger">−{{ d.appliedAmount | currency }}</span>
                     @if (editable(o)) {
                       <button type="button" class="btn btn-link btn-sm text-danger p-0" (click)="removeDiscount(d.discountId)"><i class="ti ti-x"></i></button>
                     }
@@ -182,19 +182,19 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
           <div class="card mb-3">
             <ul class="list-group list-group-flush">
               <li class="list-group-item d-flex justify-content-between py-2 small">
-                <span class="text-secondary">Subtotal</span><span>{{ o.itemsSubtotal | number: '1.2-2' }}</span>
+                <span class="text-secondary">Subtotal</span><span>{{ o.itemsSubtotal | currency }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between py-2 small">
-                <span class="text-secondary">Descuentos</span><span>−{{ o.discountTotal | number: '1.2-2' }}</span>
+                <span class="text-secondary">Descuentos</span><span>−{{ o.discountTotal | currency }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between py-2 fw-semibold">
-                <span>Total</span><span>{{ o.totalAmount | number: '1.2-2' }}</span>
+                <span>Total</span><span>{{ o.totalAmount | currency }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between py-2 small">
-                <span class="text-secondary">Pagado</span><span>{{ o.confirmedPaid | number: '1.2-2' }}</span>
+                <span class="text-secondary">Pagado</span><span>{{ o.confirmedPaid | currency }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between py-2 fw-semibold" [class.text-success]="o.balance <= 0">
-                <span>Saldo</span><span>{{ o.balance | number: '1.2-2' }}</span>
+                <span>Saldo</span><span>{{ o.balance | currency }}</span>
               </li>
             </ul>
           </div>
@@ -207,7 +207,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                 <li class="list-group-item d-flex justify-content-between align-items-center py-2 small">
                   <span>{{ methodLabel(p.paymentMethod) }} <span class="text-secondary">· {{ p.paymentTime | date: 'shortTime' }}</span></span>
                   <span class="d-flex align-items-center gap-2">
-                    <span [class.text-decoration-line-through]="p.status === 'REFUNDED'">{{ p.amount | number: '1.2-2' }}</span>
+                    <span [class.text-decoration-line-through]="p.status === 'REFUNDED'">{{ p.amount | currency }}</span>
                     <span class="badge" [class]="p.status === 'CONFIRMED' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">{{ p.status }}</span>
                   </span>
                 </li>
@@ -235,7 +235,7 @@ import { Discount, Order, PAYMENT_METHODS, PaymentMethod } from './sales.models'
                     }
                     <div class="col-12">
                       <button type="button" class="btn btn-link btn-sm p-0" (click)="payForm.controls.amount.setValue(o.balance)">
-                        Cobrar el saldo ({{ o.balance | number: '1.2-2' }})
+                        Cobrar el saldo ({{ o.balance | currency }})
                       </button>
                     </div>
                   </form>

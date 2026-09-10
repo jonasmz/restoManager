@@ -22,6 +22,7 @@
     "@tabler/icons-webfont": "^3.46.0",
     "apexcharts": "^7.1.0",
     "bootstrap": "^5.3.8",
+    "exceljs": "^4.4.0",
     "ng-apexcharts": "^3.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

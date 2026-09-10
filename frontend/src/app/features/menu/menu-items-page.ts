@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -8,7 +8,7 @@ import { Category, MenuItem } from './menu.models';
 
 @Component({
   selector: 'app-menu-items',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-6">
@@ -37,7 +37,7 @@ import { Category, MenuItem } from './menu.models';
               <tr>
                 <td><a [routerLink]="['/menu/items', m.id]">{{ m.name }}</a></td>
                 <td class="text-secondary">{{ categoryName(m.categoryId) }}</td>
-                <td class="text-end">{{ m.price | number: '1.2-2' }}</td>
+                <td class="text-end">{{ m.price | currency }}</td>
                 <td>
                   @if (m.isAvailable) { <span class="badge bg-success-subtle text-success">Sí</span> }
                   @else { <span class="badge bg-secondary-subtle text-secondary">No</span> }

@@ -95,5 +95,31 @@ Nada de GraphQL.
 
 ## Ramas/PR (cortar en 2)
 
-1. `feat/fase-09a-reportes-backend` — endpoints de consulta + criterio MET-01.
-2. `feat/fase-09b-dashboard-frontend` — dashboard y reportes conectados.
+1. `feat/fase-09a-reportes-backend` — endpoints de consulta + criterio MET-01. **Hecha (PR #24).**
+2. `feat/fase-09b-dashboard-frontend` — dashboard y reportes conectados. **Hecha (PR #25).**
+
+## Estado — Fase 9 COMPLETA
+
+- **9a (PR #24)**: `IReportQueries` + `ReportQueries` (Infra, GROUP BY en SQL). 9
+  endpoints `GET /api/v1/reports/{dashboard, sales/summary, sales?groupBy=…,
+  products/top, payments/by-method, discounts/applied, inventory/low-stock,
+  purchasing/cost, tables/turnover}`, policy `ReportsAccess` (ADMIN, BRANCH_MANAGER).
+  Migración `IngredientReorderPoint` (ADD COLUMN). Seeder con reorder points demo.
+- **9b (PR #25)**: `features/reports/` — `ReportsApiService` + `reports.models.ts`,
+  `chart-theme.ts` (paleta del template), `ExportButtons` genérico + `core/export/
+  table-export.ts` (CSV nativo + XLSX con `exceljs`). `Dashboard` reescrito (4 KPIs,
+  barras Ventas vs Compras, dona por canal, listas Más vendidos / Bajo stock /
+  Ventas recientes, selector 7/30/90 d). `Reports` reescrito (rango de fechas +
+  presets, stat cards, área Ventas por día, 7 tablas con botones CSV/XLSX). Ruta
+  `/reports` con `roleGuard(ADMIN, BRANCH_MANAGER)`; el panel `/` degrada con aviso
+  si el backend responde 403. **Locale `es-AR` + `ARS`** en `app.config.ts`
+  (`registerLocaleData`, `LOCALE_ID`, `DEFAULT_CURRENCY_CODE`); todos los importes de
+  la app pasaron de `| number: '1.2-2'` a `| currency`.
+- `ng lint` + `ng build` limpios; verificado en navegador (dashboard, reportes,
+  export CSV/XLSX sin errores de consola).
+
+## Sigue: Fase 10 (PDF)
+
+Exportación a **PDF server-side** con **QuestPDF** y plantilla propia. Endpoint(s)
+`/api/v1/reports/**/pdf` o `?format=pdf`. Fase chica; ver `docs/roadmap/
+fase-10-export-pdf.md`.

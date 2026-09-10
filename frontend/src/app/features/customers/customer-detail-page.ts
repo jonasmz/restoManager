@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -12,7 +12,7 @@ type Tab = 'data' | 'orders' | 'loyalty' | 'giftcards';
 
 @Component({
   selector: 'app-customer-detail',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a routerLink="/customers" class="small text-decoration-none"><i class="ti ti-arrow-left me-1"></i>Clientes</a>
@@ -65,7 +65,7 @@ type Tab = 'data' | 'orders' | 'loyalty' | 'giftcards';
                   <td>{{ o.id }}</td>
                   <td class="small">{{ channelLabel(o.channel) }}</td>
                   <td><span class="badge" [class]="statusBadge(o.status)">{{ o.status }}</span></td>
-                  <td class="text-end small">{{ o.totalAmount | number: '1.2-2' }}</td>
+                  <td class="text-end small">{{ o.totalAmount | currency }}</td>
                   <td class="small text-secondary">{{ o.orderTime | date: 'short' }}</td>
                 </tr>
               } @empty { <tr><td colspan="5" class="text-center text-secondary py-4">Sin pedidos.</td></tr> }
@@ -93,7 +93,7 @@ type Tab = 'data' | 'orders' | 'loyalty' | 'giftcards';
               @for (g of giftCards(); track g.id) {
                 <tr>
                   <td class="small">{{ g.cardNumber }}</td>
-                  <td class="text-end small">{{ g.balance | number: '1.2-2' }}</td>
+                  <td class="text-end small">{{ g.balance | currency }}</td>
                   <td class="small text-secondary">{{ g.expiryDate }}</td>
                   <td>@if (g.expired) { <span class="badge bg-danger-subtle text-danger">Caducada</span> }</td>
                 </tr>

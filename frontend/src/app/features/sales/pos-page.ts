@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,7 +16,7 @@ import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
 
 @Component({
   selector: 'app-sales-pos',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mb-4">
@@ -108,8 +108,8 @@ import { ORDER_CHANNELS, Order, OrderChannel } from './sales.models';
                     <td>{{ o.id }}</td>
                     <td class="small">{{ label(o.channel) }}@if (o.tableId) { <span class="text-secondary"> · Mesa #{{ o.tableId }}</span> }</td>
                     <td><span class="badge" [class]="o.status === 'OPEN' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success'">{{ o.status }}</span></td>
-                    <td class="text-end small">{{ o.totalAmount | number: '1.2-2' }}</td>
-                    <td class="text-end small">{{ o.balance | number: '1.2-2' }}</td>
+                    <td class="text-end small">{{ o.totalAmount | currency }}</td>
+                    <td class="text-end small">{{ o.balance | currency }}</td>
                     <td class="text-end"><a class="btn btn-light btn-sm" [routerLink]="['/pos/order', o.id]">Abrir</a></td>
                   </tr>
                 } @empty {

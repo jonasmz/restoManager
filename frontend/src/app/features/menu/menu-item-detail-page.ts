@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,7 +12,7 @@ import { Category, MenuItemAvailability, MenuItemCost, TaxRate } from './menu.mo
 
 @Component({
   selector: 'app-menu-item-detail',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe],
+  imports: [ReactiveFormsModule, RouterLink, DecimalPipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a routerLink="/menu/items" class="small text-secondary"><i class="ti ti-arrow-left me-1"></i>Platos</a>
@@ -98,14 +98,14 @@ import { Category, MenuItemAvailability, MenuItemCost, TaxRate } from './menu.mo
               <div class="card-body">
                 <h2 class="fs-6 mb-3">Coste teórico</h2>
                 @if (cost(); as c) {
-                  <p class="fs-4 mb-2">{{ c.cost | number: '1.2-2' }}</p>
+                  <p class="fs-4 mb-2">{{ c.cost | currency }}</p>
                   <table class="table table-sm mb-0">
                     <tbody>
                       @for (l of c.lines; track l.ingredientId) {
                         <tr>
                           <td class="small">{{ l.ingredientName }}</td>
-                          <td class="small text-end">{{ l.quantityRequired | number: '1.0-4' }} × {{ l.unitPrice | number: '1.2-2' }}</td>
-                          <td class="small text-end">{{ l.lineCost | number: '1.2-2' }}</td>
+                          <td class="small text-end">{{ l.quantityRequired | number: '1.0-4' }} × {{ l.unitPrice | currency }}</td>
+                          <td class="small text-end">{{ l.lineCost | currency }}</td>
                         </tr>
                       }
                     </tbody>

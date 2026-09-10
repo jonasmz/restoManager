@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,7 +12,7 @@ type MoveKind = 'initial' | 'adjust' | 'waste';
 
 @Component({
   selector: 'app-inv-stock',
-  imports: [ReactiveFormsModule, RouterLink, DecimalPipe],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-6">
@@ -50,7 +50,7 @@ type MoveKind = 'initial' | 'adjust' | 'waste';
                 <td class="text-secondary">{{ s.unit }}</td>
                 <td class="text-end">{{ s.stockQuantity }}</td>
                 <td class="text-end text-secondary">{{ s.unitPrice }}</td>
-                <td class="text-end">{{ s.stockValue | number: '1.2-2' }}</td>
+                <td class="text-end">{{ s.stockValue | currency }}</td>
               </tr>
             } @empty { <tr><td colspan="5" class="text-center text-secondary py-4">Sin existencias.</td></tr> }
           </tbody>

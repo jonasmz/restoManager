@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -11,7 +11,7 @@ const PO_STATUSES = ['DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELL
 
 @Component({
   selector: 'app-buy-orders',
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="d-flex justify-content-between align-items-start mb-6">
@@ -46,7 +46,7 @@ const PO_STATUSES = ['DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELL
                 <td>#{{ o.id }}</td>
                 <td>{{ supplierName(o.supplierId) }}</td>
                 <td class="text-secondary small">{{ o.orderDate | date: 'shortDate' }}</td>
-                <td class="text-end">{{ o.totalAmount | number: '1.2-2' }}</td>
+                <td class="text-end">{{ o.totalAmount | currency }}</td>
                 <td><span class="badge" [class]="badge(o.status)">{{ o.status }}</span></td>
                 <td class="text-end">
                   @if (o.status === 'DRAFT') {
@@ -73,8 +73,8 @@ const PO_STATUSES = ['DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELL
                           <tr>
                             <td>{{ ingredientName(it.ingredientId) }}</td>
                             <td class="text-end">{{ it.quantity }}</td>
-                            <td class="text-end">{{ it.unitPrice | number: '1.2-2' }}</td>
-                            <td class="text-end">{{ it.quantity * it.unitPrice | number: '1.2-2' }}</td>
+                            <td class="text-end">{{ it.unitPrice | currency }}</td>
+                            <td class="text-end">{{ it.quantity * it.unitPrice | currency }}</td>
                           </tr>
                         }
                       </tbody>
@@ -129,7 +129,7 @@ const PO_STATUSES = ['DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELL
                 }
               </tbody>
               <tfoot>
-                <tr><th colspan="3" class="text-end">Total</th><th class="text-end">{{ total() | number: '1.2-2' }}</th></tr>
+                <tr><th colspan="3" class="text-end">Total</th><th class="text-end">{{ total() | currency }}</th></tr>
               </tfoot>
             </table>
 
