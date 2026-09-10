@@ -183,7 +183,7 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         await db.SaveChangesAsync(cancellationToken);
 
         var pizza = new MenuItem(principales.Id, "Pizza Margarita", "Salsa de tomate y mozzarella", 12.00m, true);
-        pizza.SetRecipe([(harina.Id, 0.25m), (tomate.Id, 0.15m), (mozzarella.Id, 0.20m)]);
+        pizza.SetRecipe([(harina.Id, 0.25m, true), (tomate.Id, 0.15m, true), (mozzarella.Id, 0.20m, true)]);
         pizza.SetTaxes([iva.Id]);
         db.MenuItems.Add(pizza);
         await db.SaveChangesAsync(cancellationToken);

@@ -55,6 +55,7 @@ public sealed class GetPublicCatalogHandler(
                 m.Price,
                 MenuImagePath.For(m.ImageKey),
                 m.Recipe
+                    .Where(r => r.IsPublic) // issue #34: ingredientes ocultos no se listan
                     .Select(r => ingredientNames.GetValueOrDefault(r.IngredientId))
                     .Where(n => !string.IsNullOrEmpty(n))
                     .Select(n => n!)

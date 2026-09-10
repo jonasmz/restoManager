@@ -38,7 +38,7 @@ public class SaleConsumptionServiceTests
     private static MenuItem MenuItemWithRecipe(int id, params (int ingredientId, decimal qty)[] recipe)
     {
         var mi = new MenuItem(1, $"item{id}", "", 10m, true);
-        mi.SetRecipe(recipe);
+        mi.SetRecipe(recipe.Select(r => (r.ingredientId, r.qty, true)));
         typeof(MenuItem).GetProperty(nameof(MenuItem.Id))!.SetValue(mi, id);
         return mi;
     }

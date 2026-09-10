@@ -16,6 +16,8 @@ export interface Category {
 export interface RecipeLine {
   ingredientId: number;
   quantityRequired: number;
+  /** Si el ingrediente se muestra en la carta pública (issue #34). Por defecto true. */
+  isPublic: boolean;
 }
 
 export interface MenuItem {

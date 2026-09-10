@@ -59,7 +59,10 @@ import { Category, MenuItemAvailability, MenuItemCost, TaxRate } from './menu.mo
                 <button type="button" class="btn btn-light btn-sm" (click)="addLine()"><i class="ti ti-plus"></i> Ingrediente</button>
               </div>
               <table class="table table-sm align-middle mb-0">
-                <thead><tr><th style="width: 60%">Ingrediente</th><th>Cantidad</th><th></th></tr></thead>
+                <thead><tr>
+                  <th style="width: 55%">Ingrediente</th><th>Cantidad</th>
+                  <th class="text-center" title="Se muestra en la carta pública">En carta</th><th></th>
+                </tr></thead>
                 <tbody formArrayName="recipe">
                   @for (line of recipe.controls; track $index) {
                     <tr [formGroupName]="$index">
@@ -70,9 +73,10 @@ import { Category, MenuItemAvailability, MenuItemCost, TaxRate } from './menu.mo
                         </select>
                       </td>
                       <td><input type="number" step="0.0001" min="0.0001" class="form-control form-control-sm" formControlName="quantityRequired" /></td>
+                      <td class="text-center"><input type="checkbox" class="form-check-input" formControlName="isPublic" /></td>
                       <td><button type="button" class="btn btn-link btn-sm text-danger p-0" (click)="removeLine($index)"><i class="ti ti-trash"></i></button></td>
                     </tr>
-                  } @empty { <tr><td colspan="3" class="text-secondary small py-3">Sin ingredientes en la receta.</td></tr> }
+                  } @empty { <tr><td colspan="4" class="text-secondary small py-3">Sin ingredientes en la receta.</td></tr> }
                 </tbody>
               </table>
             </div>
@@ -219,7 +223,7 @@ export class MenuItemDetailPage implements OnInit {
         });
         this.recipe.clear();
         for (const r of m.recipe) {
-          this.recipe.push(this.lineGroup(r.ingredientId, r.quantityRequired));
+          this.recipe.push(this.lineGroup(r.ingredientId, r.quantityRequired, r.isPublic));
         }
         this.selectedTaxes.set(new Set(m.taxRateIds));
         this.imageUrl.set(m.imageUrl ? `${environment.businessApiUrl}${m.imageUrl}` : null);
@@ -230,10 +234,11 @@ export class MenuItemDetailPage implements OnInit {
     this.api.getAvailability(itemId).subscribe({ next: (a) => this.availability.set(a), error: () => undefined });
   }
 
-  private lineGroup(ingredientId = 0, quantityRequired = 1) {
+  private lineGroup(ingredientId = 0, quantityRequired = 1, isPublic = true) {
     return this.fb.nonNullable.group({
       ingredientId: [ingredientId, [Validators.required, Validators.min(1)]],
       quantityRequired: [quantityRequired, [Validators.required, Validators.min(0.0001)]],
+      isPublic: [isPublic],
     });
   }
 
@@ -306,6 +311,7 @@ export class MenuItemDetailPage implements OnInit {
       recipe: v.recipe.map((r) => ({
         ingredientId: Number(r.ingredientId),
         quantityRequired: Number(r.quantityRequired),
+        isPublic: r.isPublic,
       })),
       taxRateIds: [...this.selectedTaxes()],
     };

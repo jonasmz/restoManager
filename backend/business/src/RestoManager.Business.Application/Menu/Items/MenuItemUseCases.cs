@@ -8,7 +8,7 @@ using RestoManager.Business.Domain.Tax;
 
 namespace RestoManager.Business.Application.Menu.Items;
 
-public sealed record RecipeLineDto(int IngredientId, decimal QuantityRequired);
+public sealed record RecipeLineDto(int IngredientId, decimal QuantityRequired, bool IsPublic = true);
 
 public sealed record MenuItemDto(
     int Id, int CategoryId, string Name, string Description, decimal Price, bool IsAvailable,
@@ -92,7 +92,7 @@ public sealed class SaveMenuItemHandler(
                     throw new NotFoundException("ingrediente", line.IngredientId);
                 }
             }
-            entity.SetRecipe(recipe.Select(l => (l.IngredientId, l.QuantityRequired)));
+            entity.SetRecipe(recipe.Select(l => (l.IngredientId, l.QuantityRequired, l.IsPublic)));
         }
 
         if (command.TaxRateIds is { } taxIds)
@@ -127,7 +127,7 @@ public sealed class ListMenuItemsHandler(IMenuItemRepository menuItems)
 
     internal static MenuItemDto Map(MenuItem m) => new(
         m.Id, m.CategoryId, m.Name, m.Description, m.Price, m.IsAvailable,
-        m.Recipe.Select(r => new RecipeLineDto(r.IngredientId, r.QuantityRequired)).ToList(),
+        m.Recipe.Select(r => new RecipeLineDto(r.IngredientId, r.QuantityRequired, r.IsPublic)).ToList(),
         m.Taxes.Select(t => t.TaxRateId).ToList(),
         MenuImagePath.For(m.ImageKey));
 }
