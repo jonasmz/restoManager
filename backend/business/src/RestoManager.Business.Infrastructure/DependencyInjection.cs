@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestoManager.Business.Application.Abstractions;
+using RestoManager.Business.Application.Reports;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Customers;
 using RestoManager.Business.Domain.Delivery;
@@ -76,6 +77,8 @@ public static class DependencyInjection
         services.AddScoped<IKitchenStationRepository, KitchenStationRepository>();
         services.AddScoped<IMenuItemAvailabilityRepository, MenuItemAvailabilityRepository>();
         services.AddScoped<ITaxRateRepository, TaxRateRepository>();
+
+        services.AddScoped<IReportQueries, Persistence.Reports.ReportQueries>();
 
         return services;
     }

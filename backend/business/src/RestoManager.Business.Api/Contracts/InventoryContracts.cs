@@ -1,7 +1,7 @@
 namespace RestoManager.Business.Api.Contracts;
 
-public sealed record CreateIngredientRequest(string Name, string Unit, decimal UnitPrice);
-public sealed record UpdateIngredientRequest(string Name, string Unit, decimal UnitPrice);
+public sealed record CreateIngredientRequest(string Name, string Unit, decimal UnitPrice, decimal ReorderPoint = 0m);
+public sealed record UpdateIngredientRequest(string Name, string Unit, decimal UnitPrice, decimal ReorderPoint = 0m);
 
 // Sucursal = sucursal activa (header X-Branch-Id).
 public sealed record RegisterWasteRequest(int IngredientId, decimal Quantity, string Reason);

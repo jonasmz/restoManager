@@ -16,13 +16,27 @@ agregados (§8, MET-02): todo se calcula por consulta.
 Fases 6 (ventas), 7 (delivery) y 8 (clientes) — para tener datos que reportar. El
 dashboard "con datos mock" ya existe desde Fase 0; aquí se conecta a datos reales.
 
-### Decisiones bloqueantes
+### Decisiones bloqueantes — RESUELTAS (2026-09-10)
 
-1. Confirmación final de qué `orders.status` cuentan como **venta efectiva** (MET-01)
-   y de qué `payments.status` cuentan para medios de pago.
-2. Moneda y locale de presentación (el template trae `₹`/`en-IN` heredado —
-   reemplazar).
-3. Definición de "producto con bajo stock" (umbral por ingrediente/plato).
+1. **Venta efectiva (MET-01)**: `orders.status IN ('PAID','CLOSED')`. Se excluyen
+   `OPEN` (aún sin cobrar) y `CANCELLED`. Medios de pago: solo
+   `payments.status = 'CONFIRMED'` (excluye `PENDING`/`FAILED`/`REFUNDED`). Coincide
+   con lo decidido en Fase 6. Cada endpoint documenta el criterio.
+2. **Moneda y locale**: `LOCALE_ID = 'es-AR'` + `DEFAULT_CURRENCY_CODE = 'ARS'` en
+   todo el frontend (formato `1.234,56`, símbolo `$`). Se registra `es-AR` con
+   `registerLocaleData` y se sustituyen los `| number: '1.2-2'` de importes por
+   `| currency`. Nada de `₹`/`en-IN`.
+3. **Bajo stock**: **umbral por ingrediente**. Columna nueva
+   `ingredients.reorder_point decimal(10,2) NOT NULL DEFAULT 0` (migración
+   `IngredientReorderPoint`, primer cambio de esquema desde la baseline). Un insumo
+   está "bajo stock" en una sucursal cuando `reorder_point > 0` y
+   `branch_inventory.stock_quantity <= ingredients.reorder_point`. El CRUD de
+   ingredientes (Fase 3) gana el campo. Un override por sucursal
+   (`branch_inventory.reorder_point`) queda para una fase futura si hace falta.
+
+**API: REST** (decidido 2026-09-09). Endpoints `/api/v1/reports/...` con filtros por
+query string; se minimizan rutas con `groupBy` (p. ej. `reports/sales?groupBy=`).
+Nada de GraphQL.
 
 ## Backend
 

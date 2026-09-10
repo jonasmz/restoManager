@@ -11,13 +11,21 @@ public sealed class Ingredient
     public string Unit { get; private set; } = string.Empty;
     public decimal UnitPrice { get; private set; }
 
+    /// <summary>
+    /// Punto de reposición (Fase 9): un insumo está "bajo stock" en una sucursal
+    /// cuando <c>ReorderPoint &gt; 0</c> y el saldo de <see cref="BranchInventory"/>
+    /// es menor o igual. <c>0</c> = sin control (nunca marca bajo stock).
+    /// </summary>
+    public decimal ReorderPoint { get; private set; }
+
     private Ingredient() { }
 
-    public Ingredient(string name, string unit, decimal unitPrice)
+    public Ingredient(string name, string unit, decimal unitPrice, decimal reorderPoint = 0m)
     {
         Rename(name);
         SetUnit(unit);
         SetUnitPrice(unitPrice);
+        SetReorderPoint(reorderPoint);
     }
 
     public void Rename(string name)
@@ -37,6 +45,16 @@ public sealed class Ingredient
             throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario no puede ser negativo.");
         }
         UnitPrice = unitPrice;
+    }
+
+    public void SetReorderPoint(decimal reorderPoint)
+    {
+        if (reorderPoint < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(reorderPoint), "El punto de reposición no puede ser negativo.");
+        }
+        ReorderPoint = reorderPoint;
     }
 }
 

@@ -6,10 +6,10 @@ using RestoManager.Business.Domain.Inventory;
 
 namespace RestoManager.Business.Application.Inventory.Ingredients;
 
-public sealed record IngredientDto(int Id, string Name, string Unit, decimal UnitPrice);
+public sealed record IngredientDto(int Id, string Name, string Unit, decimal UnitPrice, decimal ReorderPoint);
 
 // ---- Crear ----
-public sealed record CreateIngredientCommand(string Name, string Unit, decimal UnitPrice);
+public sealed record CreateIngredientCommand(string Name, string Unit, decimal UnitPrice, decimal ReorderPoint = 0m);
 
 public sealed class CreateIngredientValidator : AbstractValidator<CreateIngredientCommand>
 {
@@ -18,6 +18,7 @@ public sealed class CreateIngredientValidator : AbstractValidator<CreateIngredie
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Unit).NotEmpty().MaximumLength(20);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.ReorderPoint).GreaterThanOrEqualTo(0);
     }
 }
 
@@ -29,7 +30,7 @@ public sealed class CreateIngredientHandler(
     public async Task<int> HandleAsync(CreateIngredientCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        var ingredient = new Ingredient(command.Name, command.Unit, command.UnitPrice);
+        var ingredient = new Ingredient(command.Name, command.Unit, command.UnitPrice, command.ReorderPoint);
         ingredients.Add(ingredient);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ingredient.Id;
@@ -37,7 +38,7 @@ public sealed class CreateIngredientHandler(
 }
 
 // ---- Actualizar ----
-public sealed record UpdateIngredientCommand(int Id, string Name, string Unit, decimal UnitPrice);
+public sealed record UpdateIngredientCommand(int Id, string Name, string Unit, decimal UnitPrice, decimal ReorderPoint = 0m);
 
 public sealed class UpdateIngredientValidator : AbstractValidator<UpdateIngredientCommand>
 {
@@ -47,6 +48,7 @@ public sealed class UpdateIngredientValidator : AbstractValidator<UpdateIngredie
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Unit).NotEmpty().MaximumLength(20);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.ReorderPoint).GreaterThanOrEqualTo(0);
     }
 }
 
@@ -64,6 +66,7 @@ public sealed class UpdateIngredientHandler(
         ingredient.Rename(command.Name);
         ingredient.SetUnit(command.Unit);
         ingredient.SetUnitPrice(command.UnitPrice);
+        ingredient.SetReorderPoint(command.ReorderPoint);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
@@ -79,7 +82,7 @@ public sealed class ListIngredientsHandler(IIngredientRepository ingredients)
         var items = await ingredients.ListAsync(query.Search, page.Skip, page.Take, cancellationToken);
         var total = await ingredients.CountAsync(query.Search, cancellationToken);
         return new PagedResult<IngredientDto>(
-            items.Select(i => new IngredientDto(i.Id, i.Name, i.Unit, i.UnitPrice)).ToList(),
+            items.Select(i => new IngredientDto(i.Id, i.Name, i.Unit, i.UnitPrice, i.ReorderPoint)).ToList(),
             query.Page, page.Take, total);
     }
 }
@@ -89,6 +92,6 @@ public sealed class GetIngredientHandler(IIngredientRepository ingredients)
     public async Task<IngredientDto> HandleAsync(int id, CancellationToken cancellationToken = default)
     {
         var i = await ingredients.GetAsync(id, cancellationToken) ?? throw new NotFoundException("ingrediente", id);
-        return new IngredientDto(i.Id, i.Name, i.Unit, i.UnitPrice);
+        return new IngredientDto(i.Id, i.Name, i.Unit, i.UnitPrice, i.ReorderPoint);
     }
 }
