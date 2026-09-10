@@ -5,6 +5,9 @@ public interface IOrderRepository
     /// <summary>Carga el pedido con sus ítems, descuentos y pagos.</summary>
     Task<Order?> GetAsync(int id, CancellationToken ct = default);
 
+    /// <summary>¿Hay algún pedido <c>OPEN</c> asociado a esa sesión de mesa? (SES-06, issue #29).</summary>
+    Task<bool> HasOpenOrdersForSessionAsync(int tableSessionId, CancellationToken ct = default);
+
     Task<IReadOnlyList<Order>> ListAsync(
         int branchId,
         OrderChannel? channel,

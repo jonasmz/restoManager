@@ -8,6 +8,9 @@ public sealed class OrderRepository(BusinessDbContext db) : IOrderRepository
     public Task<Order?> GetAsync(int id, CancellationToken ct = default)
         => WithChildren(db.Orders).FirstOrDefaultAsync(x => x.Id == id, ct);
 
+    public Task<bool> HasOpenOrdersForSessionAsync(int tableSessionId, CancellationToken ct = default)
+        => db.Orders.AnyAsync(x => x.TableSessionId == tableSessionId && x.Status == OrderStatus.Open, ct);
+
     public async Task<IReadOnlyList<Order>> ListAsync(
         int branchId,
         OrderChannel? channel,
