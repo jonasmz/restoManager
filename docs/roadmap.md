@@ -40,6 +40,7 @@ ejecutarla sin ambigüedad.
 | [9 — Dashboard y reportes](roadmap/fase-09-dashboard-reportes.md) | Métricas derivadas de datos transaccionales; dashboard y reportes del template con datos reales | *(solo lectura + `ingredients.reorder_point`)* | §8, §12, MET-01/02 | 6, 7, 8 | **Hecha** (PR #24 backend, #25 frontend). REST `/api/v1/reports/*`; venta efectiva = PAID+CLOSED; pagos CONFIRMED; bajo stock por `ingredients.reorder_point`. Frontend: dashboard + reportes con `ng-apexcharts`, locale `es-AR`/`$`, export CSV/XLSX por tabla |
 | [10 — Exportación de reportes a PDF](roadmap/fase-10-export-pdf.md) | Endpoint(s) de PDF server-side con plantilla propia (QuestPDF) para reportes branded/reproducibles | *(solo lectura)* | §8 | 9 | **Hecha** (PR #26). 9 rutas `/api/v1/reports/**/pdf` (QuestPDF, encabezado con restaurante/sucursal/CUIT/período, es-AR); botones PDF en panel y reportes |
 | [11 — Carta pública / QR](roadmap/fase-11-carta-publica.md) | Carta pública por sucursal accesible por QR: filtro por categoría, buscador, cards con imagen/ingredientes/precio y carrito de estimación | *(desvío: `menu_items.image_key`, `branches.public_slug` + almacén de imágenes)* | — (alcance nuevo) | 2, 4 | **Hecha** (PR #30 backend, 11b frontend). Endpoint anónimo `/api/v1/public/catalog/{slug}`; imágenes servidas en `/media/menu`; disponibilidad por sucursal respetada; carrito de estimación en el cliente; slug + QR en la ficha de sucursal |
+| [12 — Combos](roadmap/fase-12-combos.md) | Combos de platos (± bebida) con descuento plano: % sobre la suma de sus platos o precio fijo. ABM en el menú, uso en el POS (se expande en líneas + ahorro congelado) y en la carta pública | *(desvío: `combos`, `combo_items`, `order_combos` + `order_items.order_combo_id`)* | — (alcance nuevo) | 4, 6, 11 | **Pendiente** — spec lista (2026-09-10). Sin condición de medio de pago; disponibilidad por sucursal derivada de los componentes; el ahorro cuenta como descuento en reportes |
 
 ## Grafo de dependencias
 
@@ -60,6 +61,9 @@ flowchart TD
     F8 --> F9
     F2 --> F11[11 · Carta pública / QR]
     F4 --> F11
+    F4 --> F12[12 · Combos]
+    F6 --> F12
+    F11 --> F12
 ```
 
 ## Cobertura del esquema
@@ -77,3 +81,9 @@ Las 38 tablas de `requirements/restaurant_schema.sql` se reparten así (cada tab
 
 El checklist del spec (§15) queda cubierto por los **criterios de aceptación**
 repartidos entre las fases 2–9.
+
+Las fases **posteriores al roadmap original** añaden tablas/columnas fuera de las 38 del
+esquema base (desviaciones documentadas en cada `fase-XX` con su migración EF):
+
+- **Fase 11:** `menu_items.image_key`, `branches.public_slug` (+ índice único).
+- **Fase 12:** `combos`, `combo_items`, `order_combos` (+ `order_items.order_combo_id`).
