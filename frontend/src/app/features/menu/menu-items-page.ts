@@ -49,7 +49,10 @@ import { Category, MenuItem } from './menu.models';
                   @if (m.isAvailable) { <span class="badge bg-success-subtle text-success">Sí</span> }
                   @else { <span class="badge bg-secondary-subtle text-secondary">No</span> }
                 </td>
-                <td class="text-end"><a [routerLink]="['/menu/items', m.id]" class="btn btn-light btn-sm"><i class="ti ti-edit"></i></a></td>
+                <td class="text-end">
+                  <a [routerLink]="['/menu/items', m.id]" class="btn btn-light btn-sm"><i class="ti ti-edit"></i></a>
+                  <button type="button" class="btn btn-light btn-sm text-danger" (click)="delete(m)"><i class="ti ti-trash"></i></button>
+                </td>
               </tr>
             } @empty { <tr><td colspan="5" class="text-center text-secondary py-4">Sin platos.</td></tr> }
           </tbody>
@@ -82,6 +85,16 @@ export class MenuItemsPage {
 
   protected imageUrl(m: MenuItem): string | null {
     return m.imageUrl ? `${environment.businessApiUrl}${m.imageUrl}` : null;
+  }
+
+  protected delete(m: MenuItem): void {
+    if (!confirm(`¿Eliminar el plato "${m.name}"?`)) {
+      return;
+    }
+    this.api.deleteMenuItem(m.id).subscribe({
+      next: () => this.reload(),
+      error: (err) => this.error.set(apiErrorMessage(err)),
+    });
   }
 
   private reload(): void {

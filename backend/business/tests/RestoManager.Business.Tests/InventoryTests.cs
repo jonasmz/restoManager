@@ -1,3 +1,4 @@
+using RestoManager.Business.Application.Inventory.Ingredients;
 using RestoManager.Business.Application.Inventory.Ledger;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
@@ -176,6 +177,67 @@ public class IngredientReorderPointTests
     {
         var i = new Ingredient("Sal", "kg", 0.10m);
         Assert.Throws<ArgumentOutOfRangeException>(() => i.SetReorderPoint(-1m));
+    }
+}
+
+public class IngredientDeleteTests
+{
+    private static readonly DateTime Now = new(2026, 9, 11, 10, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public void Delete_sets_DeletedAt_and_IsDeleted()
+    {
+        var i = new Ingredient("Harina", "kg", 0.90m);
+        Assert.False(i.IsDeleted);
+
+        i.Delete(Now);
+
+        Assert.True(i.IsDeleted);
+        Assert.Equal(Now, i.DeletedAt);
+    }
+
+    [Fact]
+    public void Delete_twice_is_rejected()
+    {
+        var i = new Ingredient("Harina", "kg", 0.90m);
+        i.Delete(Now);
+
+        var ex = Assert.Throws<DomainRuleException>(() => i.Delete(Now));
+        Assert.Equal("inventory.ingredient_already_deleted", ex.Code);
+    }
+}
+
+public class DeleteIngredientHandlerTests
+{
+    private sealed class FakeIngredients(Ingredient? ingredient) : IIngredientRepository
+    {
+        public Task<Ingredient?> GetAsync(int id, CancellationToken ct = default) => Task.FromResult(ingredient);
+        public Task<bool> ExistsAsync(int id, CancellationToken ct = default) => Task.FromResult(ingredient is not null);
+        public Task<IReadOnlyList<Ingredient>> ListAsync(string? search, int skip, int take, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Ingredient>>(ingredient is null ? [] : [ingredient]);
+        public Task<int> CountAsync(string? search, CancellationToken ct = default) => Task.FromResult(ingredient is null ? 0 : 1);
+        public void Add(Ingredient ingredient) { }
+    }
+
+    private static readonly DateTime Now = new(2026, 9, 11, 10, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public async Task Delete_marks_the_ingredient()
+    {
+        var ingredient = new Ingredient("Harina", "kg", 0.90m);
+        var handler = new DeleteIngredientHandler(new FakeIngredients(ingredient), new FixedClock(Now), new FakeUnitOfWork());
+
+        await handler.HandleAsync(1);
+
+        Assert.True(ingredient.IsDeleted);
+        Assert.Equal(Now, ingredient.DeletedAt);
+    }
+
+    [Fact]
+    public async Task Delete_missing_ingredient_throws_not_found()
+    {
+        var handler = new DeleteIngredientHandler(new FakeIngredients(null), new FixedClock(Now), new FakeUnitOfWork());
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(999));
     }
 }
 

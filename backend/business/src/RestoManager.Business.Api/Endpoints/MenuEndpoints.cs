@@ -78,6 +78,13 @@ public static class MenuEndpoints
             return Results.NoContent();
         });
 
+        // Baja lógica (issue #47): no borra la receta de la BD ni los ingredientes.
+        menu.MapDelete("/menu-items/{id:int}", async (int id, DeleteMenuItemHandler h, CancellationToken ct) =>
+        {
+            await h.HandleAsync(id, ct);
+            return Results.NoContent();
+        });
+
         // Disponibilidad por sucursal activa (X-Branch-Id).
         menu.MapGet("/menu-items/{id:int}/availability", async (
             int id, GetMenuItemAvailabilityHandler h, CancellationToken ct) =>

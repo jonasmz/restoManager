@@ -141,6 +141,17 @@ public sealed class GetMenuItemHandler(IMenuItemRepository menuItems)
     }
 }
 
+// ---- Eliminar (baja lógica, issue #47; no afecta a los ingredientes de la receta) ----
+public sealed class DeleteMenuItemHandler(IMenuItemRepository menuItems, IClock clock, IUnitOfWork unitOfWork)
+{
+    public async Task HandleAsync(int id, CancellationToken ct = default)
+    {
+        var item = await menuItems.GetAsync(id, ct) ?? throw new NotFoundException("plato", id);
+        item.Delete(clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
 /// <summary>Costo teórico del plato = Σ(<c>quantity_required</c> × <c>ingredients.unit_price</c>) (apoyo para la Fase 6).</summary>
 public sealed class GetMenuItemCostHandler(IMenuItemRepository menuItems, IIngredientRepository ingredients)
 {

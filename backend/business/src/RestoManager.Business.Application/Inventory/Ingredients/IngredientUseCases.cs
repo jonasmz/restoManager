@@ -95,3 +95,15 @@ public sealed class GetIngredientHandler(IIngredientRepository ingredients)
         return new IngredientDto(i.Id, i.Name, i.Unit, i.UnitPrice, i.ReorderPoint);
     }
 }
+
+// ---- Eliminar (baja lógica, issue #47) ----
+public sealed class DeleteIngredientHandler(IIngredientRepository ingredients, IClock clock, IUnitOfWork unitOfWork)
+{
+    public async Task HandleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var ingredient = await ingredients.GetAsync(id, cancellationToken)
+            ?? throw new NotFoundException("ingrediente", id);
+        ingredient.Delete(clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+}

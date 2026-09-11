@@ -30,7 +30,10 @@ import { Ingredient } from './inventory.models';
                 <td>{{ i.name }}</td>
                 <td class="text-secondary">{{ i.unit }}</td>
                 <td>{{ i.unitPrice }}</td>
-                <td class="text-end"><button type="button" class="btn btn-light btn-sm" (click)="openEdit(i)"><i class="ti ti-edit"></i></button></td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-light btn-sm" (click)="openEdit(i)"><i class="ti ti-edit"></i></button>
+                  <button type="button" class="btn btn-light btn-sm text-danger" (click)="delete(i)"><i class="ti ti-trash"></i></button>
+                </td>
               </tr>
             } @empty { <tr><td colspan="4" class="text-center text-secondary py-4">Sin ingredientes.</td></tr> }
           </tbody>
@@ -76,6 +79,17 @@ export class IngredientsPage {
 
   private reload(): void {
     this.api.listIngredients().subscribe((p) => this.rows.set(p.items));
+  }
+
+  protected delete(i: Ingredient): void {
+    if (!confirm(`¿Eliminar el ingrediente "${i.name}"?`)) {
+      return;
+    }
+    this.error.set(null);
+    this.api.deleteIngredient(i.id).subscribe({
+      next: () => this.reload(),
+      error: (err) => this.error.set(apiErrorMessage(err)),
+    });
   }
 
   private buildForm() {

@@ -60,6 +60,11 @@ public sealed class MenuItem
     /// </summary>
     public string? ImageKey { get; private set; }
 
+    /// <summary>Fecha de baja lógica (issue #47). <c>null</c> = plato activo.</summary>
+    public DateTime? DeletedAt { get; private set; }
+
+    public bool IsDeleted => DeletedAt is not null;
+
     public IReadOnlyList<RecipeItem> Recipe => _recipe;
     public IReadOnlyList<MenuItemTax> Taxes => _taxes;
 
@@ -102,6 +107,20 @@ public sealed class MenuItem
 
     /// <summary>Quita la imagen del plato.</summary>
     public void ClearImage() => ImageKey = null;
+
+    /// <summary>
+    /// Baja lógica (issue #47): no elimina la fila ni su receta/impuestos, solo la
+    /// oculta de altas/listados/edición. No afecta a los <see cref="Ingredient"/>
+    /// referenciados por la receta.
+    /// </summary>
+    public void Delete(DateTime deletedAt)
+    {
+        if (IsDeleted)
+        {
+            throw new DomainRuleException("menu.item_already_deleted", "El plato ya fue eliminado.");
+        }
+        DeletedAt = deletedAt;
+    }
 
     /// <summary>
     /// Reemplaza toda la receta. Rechaza ingredientes repetidos (§7.5,

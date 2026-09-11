@@ -41,6 +41,7 @@ public static class DependencyInjection
         // Inventario
         services.AddScoped<CreateIngredientHandler>();
         services.AddScoped<UpdateIngredientHandler>();
+        services.AddScoped<DeleteIngredientHandler>();
         services.AddScoped<ListIngredientsHandler>();
         services.AddScoped<GetIngredientHandler>();
         services.AddScoped<GetBranchStockHandler>();
@@ -142,6 +143,7 @@ public static class DependencyInjection
         services.AddScoped<ListCategoriesHandler>();
         services.AddScoped<GetCategoryHandler>();
         services.AddScoped<SaveMenuItemHandler>();
+        services.AddScoped<DeleteMenuItemHandler>();
         services.AddScoped<ListMenuItemsHandler>();
         services.AddScoped<GetMenuItemHandler>();
         services.AddScoped<GetMenuItemCostHandler>();

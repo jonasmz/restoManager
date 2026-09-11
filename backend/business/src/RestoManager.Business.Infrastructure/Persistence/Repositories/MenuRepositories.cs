@@ -33,10 +33,10 @@ public sealed class MenuItemRepository(BusinessDbContext db) : IMenuItemReposito
 {
     public Task<MenuItem?> GetAsync(int id, CancellationToken ct = default)
         => db.MenuItems.Include(x => x.Recipe).Include(x => x.Taxes)
-            .FirstOrDefaultAsync(x => x.Id == id, ct);
+            .FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, ct);
 
     public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
-        => db.MenuItems.AnyAsync(x => x.Id == id, ct);
+        => db.MenuItems.AnyAsync(x => x.Id == id && x.DeletedAt == null, ct);
 
     public async Task<IReadOnlyList<MenuItem>> ListAsync(
         int? categoryId, string? search, int skip, int take, CancellationToken ct = default)
@@ -52,7 +52,7 @@ public sealed class MenuItemRepository(BusinessDbContext db) : IMenuItemReposito
 
     private IQueryable<MenuItem> Filter(int? categoryId, string? search)
     {
-        var q = db.MenuItems.AsQueryable();
+        var q = db.MenuItems.Where(x => x.DeletedAt == null);
         if (categoryId is { } c)
         {
             q = q.Where(x => x.CategoryId == c);
