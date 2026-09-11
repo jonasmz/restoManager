@@ -25,6 +25,10 @@ export class InventoryApiService {
       ? this.http.put(`${this.base}/ingredients/${id}`, body)
       : this.http.post(`${this.base}/ingredients`, body);
   }
+  /** Baja lógica (issue #47): no afecta recetas/movimientos/compras que ya lo referencian. */
+  deleteIngredient(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/ingredients/${id}`);
+  }
 
   // ---- Existencias y movimientos (sucursal activa) ----
   stock(): Observable<StockLine[]> {

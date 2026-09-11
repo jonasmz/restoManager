@@ -6,10 +6,10 @@ namespace RestoManager.Business.Infrastructure.Persistence.Repositories;
 public sealed class IngredientRepository(BusinessDbContext db) : IIngredientRepository
 {
     public Task<Ingredient?> GetAsync(int id, CancellationToken cancellationToken = default)
-        => db.Ingredients.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        => db.Ingredients.FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, cancellationToken);
 
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
-        => db.Ingredients.AnyAsync(x => x.Id == id, cancellationToken);
+        => db.Ingredients.AnyAsync(x => x.Id == id && x.DeletedAt == null, cancellationToken);
 
     public async Task<IReadOnlyList<Ingredient>> ListAsync(
         string? search, int skip, int take, CancellationToken cancellationToken = default)
@@ -22,7 +22,7 @@ public sealed class IngredientRepository(BusinessDbContext db) : IIngredientRepo
 
     private IQueryable<Ingredient> Filter(string? search)
     {
-        var q = db.Ingredients.AsQueryable();
+        var q = db.Ingredients.Where(x => x.DeletedAt == null);
         return string.IsNullOrWhiteSpace(search)
             ? q
             : q.Where(x => EF.Functions.ILike(x.Name, $"%{search.Trim()}%"));

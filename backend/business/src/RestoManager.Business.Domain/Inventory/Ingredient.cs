@@ -1,3 +1,5 @@
+using RestoManager.Business.Domain.Common;
+
 namespace RestoManager.Business.Domain.Inventory;
 
 /// <summary>
@@ -17,6 +19,11 @@ public sealed class Ingredient
     /// es menor o igual. <c>0</c> = sin control (nunca marca bajo stock).
     /// </summary>
     public decimal ReorderPoint { get; private set; }
+
+    /// <summary>Fecha de baja lógica (issue #47). <c>null</c> = ingrediente activo.</summary>
+    public DateTime? DeletedAt { get; private set; }
+
+    public bool IsDeleted => DeletedAt is not null;
 
     private Ingredient() { }
 
@@ -55,6 +62,19 @@ public sealed class Ingredient
                 nameof(reorderPoint), "El punto de reposición no puede ser negativo.");
         }
         ReorderPoint = reorderPoint;
+    }
+
+    /// <summary>
+    /// Baja lógica (issue #47): no elimina la fila, solo la oculta de altas/listados/
+    /// edición. Las recetas/movimientos/compras que ya lo referencian no se ven afectados.
+    /// </summary>
+    public void Delete(DateTime deletedAt)
+    {
+        if (IsDeleted)
+        {
+            throw new DomainRuleException("inventory.ingredient_already_deleted", "El ingrediente ya fue eliminado.");
+        }
+        DeletedAt = deletedAt;
     }
 }
 

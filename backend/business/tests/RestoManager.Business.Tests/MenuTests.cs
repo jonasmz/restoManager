@@ -80,6 +80,29 @@ public class MenuItemRecipeTests
     [Fact]
     public void SetImage_rejects_blank_key()
         => Assert.Throws<ArgumentException>(() => NewItem().SetImage("   "));
+
+    [Fact]
+    public void Delete_sets_DeletedAt_and_IsDeleted()
+    {
+        var item = NewItem();
+        Assert.False(item.IsDeleted);
+
+        var now = new DateTime(2026, 9, 11, 10, 0, 0, DateTimeKind.Utc);
+        item.Delete(now);
+
+        Assert.True(item.IsDeleted);
+        Assert.Equal(now, item.DeletedAt);
+    }
+
+    [Fact]
+    public void Delete_twice_is_rejected()
+    {
+        var item = NewItem();
+        item.Delete(DateTime.UtcNow);
+
+        var ex = Assert.Throws<DomainRuleException>(() => item.Delete(DateTime.UtcNow));
+        Assert.Equal("menu.item_already_deleted", ex.Code);
+    }
 }
 
 public class KitchenStationTests
@@ -165,5 +188,42 @@ public class MenuItemCostTests
         // 0.25 * 2 + 0.50 * 4 = 2.50
         Assert.Equal(2.50m, cost.Cost);
         Assert.Equal(2, cost.Lines.Count);
+    }
+}
+
+public class DeleteMenuItemHandlerTests
+{
+    private sealed class FakeMenuItems(MenuItem? item) : IMenuItemRepository
+    {
+        public Task<MenuItem?> GetAsync(int id, CancellationToken ct = default) => Task.FromResult(item);
+        public Task<bool> ExistsAsync(int id, CancellationToken ct = default) => Task.FromResult(item is not null);
+        public Task<IReadOnlyList<MenuItem>> ListAsync(int? categoryId, string? search, int skip, int take, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<MenuItem>>(item is null ? [] : [item]);
+        public Task<int> CountAsync(int? categoryId, string? search, CancellationToken ct = default) => Task.FromResult(item is null ? 0 : 1);
+        public void Add(MenuItem menuItem) { }
+    }
+
+    private static readonly DateTime Now = new(2026, 9, 11, 10, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public async Task Delete_marks_the_item_without_touching_its_recipe()
+    {
+        var item = new MenuItem(1, "Pizza", "", 12m, true);
+        item.SetRecipe([(10, 1m, true)]);
+        var handler = new DeleteMenuItemHandler(new FakeMenuItems(item), new FixedClock(Now), new FakeUnitOfWork());
+
+        await handler.HandleAsync(1);
+
+        Assert.True(item.IsDeleted);
+        Assert.Equal(Now, item.DeletedAt);
+        // La receta sigue en el agregado; el borrado no toca los ingredientes referenciados (issue #47).
+        Assert.Single(item.Recipe);
+    }
+
+    [Fact]
+    public async Task Delete_missing_item_throws_not_found()
+    {
+        var handler = new DeleteMenuItemHandler(new FakeMenuItems(null), new FixedClock(Now), new FakeUnitOfWork());
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.HandleAsync(999));
     }
 }

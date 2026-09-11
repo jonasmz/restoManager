@@ -34,6 +34,13 @@ public static class InventoryEndpoints
             return Results.NoContent();
         });
 
+        // Baja lógica (issue #47): no afecta recetas/movimientos/compras que ya lo referencian.
+        group.MapDelete("/ingredients/{id:int}", async (int id, DeleteIngredientHandler handler, CancellationToken ct) =>
+        {
+            await handler.HandleAsync(id, ct);
+            return Results.NoContent();
+        });
+
         // ---- Saldo y movimientos (sucursal activa via X-Branch-Id) ----
         group.MapGet("/inventory", async (GetBranchStockHandler handler, CancellationToken ct) =>
             Results.Ok(await handler.HandleAsync(ct)));

@@ -50,6 +50,10 @@ export class MenuApiService {
   menuItemCost(id: number): Observable<MenuItemCost> {
     return this.http.get<MenuItemCost>(`${this.base}/menu-items/${id}/cost`);
   }
+  /** Baja lógica (issue #47): no elimina la receta ni los ingredientes referenciados. */
+  deleteMenuItem(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/menu-items/${id}`);
+  }
 
   // ---- Imagen ilustrativa del plato (Fase 11) ----
   uploadMenuItemImage(id: number, file: File): Observable<{ imageUrl: string }> {

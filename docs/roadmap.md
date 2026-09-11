@@ -87,3 +87,12 @@ esquema base (desviaciones documentadas en cada `fase-XX` con su migración EF):
 
 - **Fase 11:** `menu_items.image_key`, `branches.public_slug` (+ índice único).
 - **Fase 12:** `combos`, `combo_items`, `order_combos` (+ `order_items.order_combo_id`).
+- **Post-Fase 4 (issue #47):** `menu_items.deleted_at`, `ingredients.deleted_at` — baja
+  lógica (no hay hard-delete de ninguna de las dos). Se eligió soft-delete porque
+  ambas tienen FKs `NoAction` desde varias tablas (recetas, ventas, stock,
+  movimientos, compras, mermas) y un hard-delete rompería el histórico de reportes
+  (`ReportQueries.cs` sigue leyendo `menu_items`/`ingredients` directo para ventas ya
+  cerradas). Borrar un plato no borra su receta ni los ingredientes referenciados —
+  solo marca `deleted_at` en el plato; los repositorios (`GetAsync`, `ExistsAsync`,
+  listados) filtran `deleted_at IS NULL`, pero los reportes NO llevan ese filtro a
+  propósito, para no perder nombres de ítems ya vendidos.
