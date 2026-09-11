@@ -71,10 +71,17 @@ export class OrgApiService {
   getEmployee(id: number): Observable<Employee> {
     return this.http.get<Employee>(`${this.base}/employees/${id}`);
   }
-  saveEmployee(body: Omit<Employee, 'id' | 'branchId'>, id?: number): Observable<unknown> {
+  saveEmployee(body: Omit<Employee, 'id' | 'branchId' | 'userId'>, id?: number): Observable<unknown> {
     return id
       ? this.http.put(`${this.base}/employees/${id}`, body)
       : this.http.post<CreatedId>(`${this.base}/employees`, body);
+  }
+
+  linkEmployeeUser(employeeId: number, userId: number): Observable<unknown> {
+    return this.http.put(`${this.base}/employees/${employeeId}/user-id`, { userId });
+  }
+  unlinkEmployeeUser(employeeId: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/employees/${employeeId}/user-id`);
   }
 
   listShifts(employeeId: number): Observable<Shift[]> {

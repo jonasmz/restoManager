@@ -61,6 +61,47 @@ public class ShiftTests
             Shift.Create(1, new DateTime(2026, 9, 10, 8, 0, 0), new DateTime(2026, 9, 10, 16, 0, 0), 0m));
 }
 
+public class EmployeeUserLinkTests
+{
+    private static Employee NewEmployee() =>
+        new(1, 1, 1, "Ana", "Mesera", "ana@resto.local", "", new DateOnly(2026, 1, 1));
+
+    [Fact]
+    public void Link_sets_user_id()
+    {
+        var employee = NewEmployee();
+        employee.LinkUser(42);
+        Assert.Equal(42, employee.UserId);
+    }
+
+    [Fact]
+    public void Link_same_user_id_again_is_idempotent()
+    {
+        var employee = NewEmployee();
+        employee.LinkUser(42);
+        employee.LinkUser(42);
+        Assert.Equal(42, employee.UserId);
+    }
+
+    [Fact]
+    public void Link_different_user_id_when_already_linked_is_rejected()
+    {
+        var employee = NewEmployee();
+        employee.LinkUser(42);
+        var ex = Assert.Throws<DomainRuleException>(() => employee.LinkUser(99));
+        Assert.Equal("employee.already_linked", ex.Code);
+    }
+
+    [Fact]
+    public void Unlink_clears_user_id()
+    {
+        var employee = NewEmployee();
+        employee.LinkUser(42);
+        employee.UnlinkUser();
+        Assert.Null(employee.UserId);
+    }
+}
+
 public class OrgEntityValidationTests
 {
     [Fact]

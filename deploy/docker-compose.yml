@@ -38,6 +38,11 @@ services:
       Cors__Origins__0: "${CORS_ORIGIN_0:-http://localhost}"
       Cors__Origins__1: "${CORS_ORIGIN_1:-}"
       Cors__Origins__2: "${CORS_ORIGIN_2:-}"
+      # Llamada interna a la Business API para validar/vincular EmployeeId al crear un login
+      # (ver backend/auth/.../IEmployeeDirectoryClient y Business.Api/Endpoints/InternalEndpoints.cs).
+      # INTERNAL_API_KEY debe ser el mismo valor que Internal__ApiKey de backend-business.
+      Business__BaseUrl: "http://backend-business:8080"
+      Business__InternalApiKey: "${INTERNAL_API_KEY:-dev-internal-key}"
     command: ["bash", "-lc", "dotnet restore && dotnet watch run --project src/RestoManager.Auth.Api --non-interactive --no-launch-profile"]
     volumes:
       - ../backend/auth:/src
@@ -45,8 +50,12 @@ services:
       - auth_obj:/src/src/RestoManager.Auth.Api/obj
       - auth_bin:/src/src/RestoManager.Auth.Api/bin
     # Sin `ports:`: solo se accede vía nginx (servicio `nginx`) o `docker compose exec`.
+    # Espera a backend-business: el seed del admin de arranque valida/vincula su EmployeeId
+    # contra la Business API (ver Business__BaseUrl arriba).
     depends_on:
       postgres:
+        condition: service_healthy
+      backend-business:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
@@ -71,6 +80,14 @@ services:
       Cors__Origins__0: "${CORS_ORIGIN_0:-http://localhost}"
       Cors__Origins__1: "${CORS_ORIGIN_1:-}"
       Cors__Origins__2: "${CORS_ORIGIN_2:-}"
+      # Clave compartida para los endpoints /internal/* (solo Auth los llama). Debe coincidir
+      # con Business__InternalApiKey de backend-auth.
+      Internal__ApiKey: "${INTERNAL_API_KEY:-dev-internal-key}"
+      # Empleado admin sembrado (debe corresponder al Auth__BootstrapAdmin de backend-auth).
+      Seed__AdminEmployee__FirstName: "${SEED_ADMIN_FIRST_NAME:-Admin}"
+      Seed__AdminEmployee__LastName: "${SEED_ADMIN_LAST_NAME:-Demo}"
+      Seed__AdminEmployee__Email: "${SEED_ADMIN_EMAIL:-admin@resto.local}"
+      Seed__AdminEmployee__Phone: "${SEED_ADMIN_PHONE:-555-1000}"
     command: ["bash", "-lc", "dotnet restore && dotnet watch run --project src/RestoManager.Business.Api --non-interactive --no-launch-profile"]
     volumes:
       - ../backend/business:/src

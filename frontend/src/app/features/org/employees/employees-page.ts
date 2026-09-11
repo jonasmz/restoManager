@@ -28,7 +28,7 @@ import { Department, Employee, Role } from '../org.models';
     <div class="card mb-4">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-          <thead><tr><th>Nombre</th><th>Correo</th><th>Departamento</th><th>Puesto</th><th class="text-end">Acción</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Correo</th><th>Departamento</th><th>Puesto</th><th>Acceso</th><th class="text-end">Acción</th></tr></thead>
           <tbody>
             @for (e of rows(); track e.id) {
               <tr>
@@ -36,12 +36,16 @@ import { Department, Employee, Role } from '../org.models';
                 <td class="text-secondary">{{ e.email }}</td>
                 <td class="text-secondary">{{ deptName(e.departmentId) }}</td>
                 <td class="text-secondary">{{ roleName(e.roleId) }}</td>
+                <td>
+                  @if (e.userId) { <i class="ti ti-lock-check text-success" title="Tiene acceso"></i> }
+                  @else { <span class="text-secondary small">—</span> }
+                </td>
                 <td class="text-end">
                   <button type="button" class="btn btn-light btn-sm" (click)="openEdit(e)"><i class="ti ti-edit"></i></button>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="text-center text-secondary py-4">Sin empleados.</td></tr>
+              <tr><td colspan="6" class="text-center text-secondary py-4">Sin empleados.</td></tr>
             }
           </tbody>
         </table>

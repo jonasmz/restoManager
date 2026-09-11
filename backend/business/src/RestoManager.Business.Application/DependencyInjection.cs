@@ -137,6 +137,9 @@ public static class DependencyInjection
         services.AddScoped<GetEmployeeHandler>();
         services.AddScoped<EmployeeShiftsHandler>();
         services.AddScoped<EmployeeLeavesHandler>();
+        services.AddScoped<LinkEmployeeUserHandler>();
+        services.AddScoped<UnlinkEmployeeUserHandler>();
+        services.AddScoped<EmployeeExistsHandler>();
 
         // Menú y cocina
         services.AddScoped<SaveCategoryHandler>();

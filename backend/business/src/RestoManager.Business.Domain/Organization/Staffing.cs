@@ -58,6 +58,11 @@ public sealed class Employee
     public string Phone { get; private set; } = string.Empty;
     public DateOnly HireDate { get; private set; }
 
+    /// <summary>Id del AppUser (Auth API) vinculado a este empleado, si tiene acceso al sistema.
+    /// No es una FK real (bases de datos distintas): es solo el rastro de que ya se creó un
+    /// login para este empleado, para que el panel evite duplicarlo.</summary>
+    public int? UserId { get; private set; }
+
     private Employee() { }
 
     public Employee(
@@ -84,6 +89,19 @@ public sealed class Employee
         DepartmentId = departmentId;
         RoleId = roleId;
     }
+
+    /// <summary>Idempotente si se repite el mismo <paramref name="userId"/> (el seed del admin de
+    /// arranque reintenta el vínculo en cada boot); falla si ya está vinculado a otro usuario.</summary>
+    public void LinkUser(int userId)
+    {
+        if (UserId is { } current && current != userId)
+        {
+            throw new DomainRuleException("employee.already_linked", "El empleado ya tiene un acceso vinculado.");
+        }
+        UserId = userId;
+    }
+
+    public void UnlinkUser() => UserId = null;
 }
 
 public sealed class Shift

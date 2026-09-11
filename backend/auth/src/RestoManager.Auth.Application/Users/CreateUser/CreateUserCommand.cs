@@ -1,5 +1,6 @@
 using FluentValidation;
 using RestoManager.Auth.Domain.Auth;
+using RestoManager.Auth.Domain.Users;
 
 namespace RestoManager.Auth.Application.Users.CreateUser;
 
@@ -12,7 +13,7 @@ public sealed record CreateUserCommand(
 
 public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
 {
-    public CreateUserValidator()
+    public CreateUserValidator(IEmployeeDirectoryClient employeeDirectory)
     {
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
@@ -20,6 +21,10 @@ public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
             .Must(AuthRoles.IsValid)
             .WithMessage(x => $"Rol inválido '{x.Role}'. Válidos: {string.Join(", ", AuthRoles.All)}.");
         RuleFor(x => x.EmployeeId).GreaterThan(0);
+        RuleFor(x => x.EmployeeId)
+            .MustAsync((employeeId, ct) => employeeDirectory.ExistsAsync(employeeId, ct))
+            .WithMessage(x => $"No existe un empleado con id {x.EmployeeId} en el negocio.")
+            .When(x => x.EmployeeId > 0);
         RuleFor(x => x.BranchIds).NotEmpty();
         RuleForEach(x => x.BranchIds).GreaterThan(0);
     }

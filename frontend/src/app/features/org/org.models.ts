@@ -51,6 +51,8 @@ export interface Employee {
   email: string;
   phone: string;
   hireDate: string; // "yyyy-MM-dd"
+  /** Id del AppUser (Auth API) vinculado, o `null` si el empleado no tiene acceso al sistema. */
+  userId: number | null;
 }
 
 export interface Shift {
