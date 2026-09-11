@@ -120,8 +120,12 @@ public sealed class TableSession
         return new TableSession { TableId = tableId, GuestCount = guestCount, OpenedAt = now };
     }
 
-    /// <summary>SES-03: <c>closed_at &gt;= opened_at</c>; fija <c>closed_at = now</c>.</summary>
-    public void Close(DateTime now)
+    /// <summary>
+    /// SES-03: <c>closed_at &gt;= opened_at</c>; fija <c>closed_at = now</c>.
+    /// SES-06: no se cierra con pedidos abiertos en la mesa (el handler calcula
+    /// <paramref name="hasOpenOrders"/>, issue #29).
+    /// </summary>
+    public void Close(DateTime now, bool hasOpenOrders)
     {
         if (!IsOpen)
         {
@@ -130,6 +134,12 @@ public sealed class TableSession
         if (now < OpenedAt)
         {
             throw new DomainRuleException("dining.close_before_open", "El cierre no puede ser anterior a la apertura.");
+        }
+        if (hasOpenOrders)
+        {
+            throw new DomainRuleException(
+                "dining.session_has_open_orders",
+                "No se puede cerrar la sesión: la mesa tiene pedidos abiertos.");
         }
         ClosedAt = now;
     }

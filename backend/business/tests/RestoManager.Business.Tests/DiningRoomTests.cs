@@ -128,12 +128,30 @@ public class TableSessionTests
     {
         var s = TableSession.Open(1, 2, tableCapacity: 4, Now);
 
-        var early = Assert.Throws<DomainRuleException>(() => s.Close(Now.AddMinutes(-1)));
+        var early = Assert.Throws<DomainRuleException>(() => s.Close(Now.AddMinutes(-1), hasOpenOrders: false));
         Assert.Equal("dining.close_before_open", early.Code);
 
-        s.Close(Now.AddHours(1));
+        s.Close(Now.AddHours(1), hasOpenOrders: false);
         Assert.False(s.IsOpen);
-        Assert.Throws<DomainRuleException>(() => s.Close(Now.AddHours(2)));
+        Assert.Throws<DomainRuleException>(() => s.Close(Now.AddHours(2), hasOpenOrders: false));
+    }
+
+    [Fact]
+    public void Close_rejects_session_with_open_orders()
+    {
+        var s = TableSession.Open(1, 2, tableCapacity: 4, Now);
+
+        var ex = Assert.Throws<DomainRuleException>(() => s.Close(Now.AddHours(1), hasOpenOrders: true));
+        Assert.Equal("dining.session_has_open_orders", ex.Code);
+        Assert.True(s.IsOpen);
+    }
+
+    [Fact]
+    public void Close_succeeds_when_no_open_orders()
+    {
+        var s = TableSession.Open(1, 2, tableCapacity: 4, Now);
+        s.Close(Now.AddHours(1), hasOpenOrders: false);
+        Assert.False(s.IsOpen);
     }
 }
 

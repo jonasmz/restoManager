@@ -3,6 +3,7 @@ using RestoManager.Business.Application.Common;
 using RestoManager.Business.Domain.Abstractions;
 using RestoManager.Business.Domain.Common;
 using RestoManager.Business.Domain.DiningRoom;
+using RestoManager.Business.Domain.Sales;
 
 namespace RestoManager.Business.Application.DiningRoom.Sessions;
 
@@ -59,6 +60,7 @@ public sealed record CloseSessionCommand(int TableId, int SessionId);
 public sealed class CloseSessionHandler(
     ITableRepository tables,
     ITableSessionRepository sessions,
+    IOrderRepository orders,
     IUnitOfWork unitOfWork,
     BranchAccessGuard access,
     IClock clock)
@@ -75,7 +77,10 @@ public sealed class CloseSessionHandler(
         var table = await tables.GetAsync(session.TableId, ct) ?? throw new NotFoundException("mesa", session.TableId);
         access.EnsureCanOperate(table.BranchId);
 
-        session.Close(clock.UtcNow);
+        // SES-06: no cerrar con pedidos OPEN en la mesa.
+        var hasOpenOrders = await orders.HasOpenOrdersForSessionAsync(session.Id, ct);
+
+        session.Close(clock.UtcNow, hasOpenOrders);
         await unitOfWork.SaveChangesAsync(ct);
     }
 }

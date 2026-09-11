@@ -48,7 +48,9 @@ posterior a Fase 8.
     lo respalda con el índice único parcial), `guest_count > 0` (SES-04),
     `guest_count <= tables.capacity` (SES-05, valida el factory `TableSession.Open`;
     aplica también a `SeatReservation`, issue #15).
-  - `CloseSession`: `closed_at >= opened_at` (SES-03), fija `closed_at = now`.
+  - `CloseSession`: `closed_at >= opened_at` (SES-03), fija `closed_at = now`; no cerrar
+    si la mesa tiene pedidos `OPEN` (SES-06, el handler calcula el flag vía
+    `IOrderRepository.HasOpenOrdersForSessionAsync`, issue #29).
   - `SetOperationalStatus`: `ACTIVE ↔ CLEANING ↔ OUT_OF_SERVICE`; no permitir
     `CLEANING`/`OUT_OF_SERVICE` con sesión abierta.
   - `Reservation`: `RSV-01`/`DOM-04` (misma sucursal que la mesa); `party_size > 0`;
@@ -81,6 +83,7 @@ posterior a Fase 8.
       ni abrir sesión en mesa `CLEANING`/`OUT_OF_SERVICE` (SES-02/DOM-03).
 - [ ] No se puede abrir una sesión (ni sentar una reserva) con más comensales que la
       capacidad de la mesa (SES-05).
+- [ ] No se puede cerrar una sesión mientras la mesa tenga pedidos `OPEN` (SES-06).
 - [ ] `tableDisplayStatus` respeta exactamente la precedencia del Anexo B.
 - [ ] Una reserva `CONFIRMED` dentro de la ventana muestra la mesa `RESERVED`; al
       abrir la sesión pasa a `OCCUPIED` (§11.3, RSV-02).
