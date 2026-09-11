@@ -41,10 +41,11 @@ export class MenuApiService {
   getMenuItem(id: number): Observable<MenuItem> {
     return this.http.get<MenuItem>(`${this.base}/menu-items/${id}`);
   }
-  saveMenuItem(body: SaveMenuItemBody, id?: number): Observable<unknown> {
+  /** Al crear (sin `id`), el cuerpo devuelto trae `{ id }` del plato nuevo. */
+  saveMenuItem(body: SaveMenuItemBody, id?: number): Observable<{ id: number } | null> {
     return id
-      ? this.http.put(`${this.base}/menu-items/${id}`, body)
-      : this.http.post(`${this.base}/menu-items`, body);
+      ? this.http.put<null>(`${this.base}/menu-items/${id}`, body)
+      : this.http.post<{ id: number }>(`${this.base}/menu-items`, body);
   }
   menuItemCost(id: number): Observable<MenuItemCost> {
     return this.http.get<MenuItemCost>(`${this.base}/menu-items/${id}/cost`);
