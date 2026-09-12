@@ -108,6 +108,18 @@ public static class OrganizationEndpoints
             return Results.NoContent();
         });
 
+        // ---- Vínculo con el login (Auth API) ----
+        admin.MapPut("/employees/{id:int}/user-id", async (int id, LinkEmployeeUserRequest b, LinkEmployeeUserHandler h, CancellationToken ct) =>
+        {
+            await h.HandleAsync(id, b.UserId, ct);
+            return Results.NoContent();
+        });
+        admin.MapDelete("/employees/{id:int}/user-id", async (int id, UnlinkEmployeeUserHandler h, CancellationToken ct) =>
+        {
+            await h.HandleAsync(id, ct);
+            return Results.NoContent();
+        });
+
         // ---- Turnos ----
         staff.MapGet("/employees/{employeeId:int}/shifts", async (int employeeId, EmployeeShiftsHandler h, CancellationToken ct) =>
             Results.Ok(await h.ListAsync(employeeId, ct)));

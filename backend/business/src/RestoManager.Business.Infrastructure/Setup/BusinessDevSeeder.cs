@@ -14,12 +14,14 @@ namespace RestoManager.Business.Infrastructure.Setup;
 
 /// <summary>
 /// Semilla de desarrollo: 1 empresa, 2 sucursales, departamentos, roles/puestos y
-/// empleados demo. El empleado id=1 (sucursal 1) corresponde al claim
-/// <c>employee_id</c> del admin de arranque de la Auth API. Cada bloque es
+/// empleados demo. El empleado id=1 (sucursal 1) es el que el seed del admin de
+/// arranque de la Auth API vincula a su login (ver <c>IdentityDataSeeder</c> y
+/// <c>Auth:BootstrapAdmin:EmployeeId</c>, que debe coincidir con este id). Sus datos
+/// (nombre, correo, teléfono) salen de <see cref="SeedAdminEmployeeOptions"/>
+/// (sección <c>Seed:AdminEmployee</c>, ver deploy/.env.example). Cada bloque es
 /// idempotente y corre también sobre una BD ya sembrada.
-/// La reemplazará el seed real parametrizable cuando se defina.
 /// </summary>
-public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevSeeder> logger)
+public sealed class BusinessDevSeeder(BusinessDbContext db, SeedAdminEmployeeOptions adminEmployee, ILogger<BusinessDevSeeder> logger)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -144,7 +146,7 @@ public sealed class BusinessDevSeeder(BusinessDbContext db, ILogger<BusinessDevS
         await db.SaveChangesAsync(cancellationToken);
 
         var admin = new Employee(centro.Id, salonCentro.Id, gerente.Id,
-            "Admin", "Demo", "admin@resto.local", "555-1000", new DateOnly(2026, 1, 1));
+            adminEmployee.FirstName, adminEmployee.LastName, adminEmployee.Email, adminEmployee.Phone, new DateOnly(2026, 1, 1));
         var ana = new Employee(centro.Id, salonCentro.Id, mesero.Id,
             "Ana", "Mesera", "ana@resto.local", "555-1001", new DateOnly(2026, 2, 1));
         db.Employees.AddRange(admin, ana);

@@ -9,7 +9,7 @@ namespace RestoManager.Business.Application.Organization.Employees;
 
 public sealed record EmployeeDto(
     int Id, int BranchId, int DepartmentId, int RoleId,
-    string FirstName, string LastName, string Email, string Phone, DateOnly HireDate);
+    string FirstName, string LastName, string Email, string Phone, DateOnly HireDate, int? UserId);
 
 public sealed record ShiftDto(int Id, int EmployeeId, DateTime StartTime, DateTime EndTime, decimal ScheduledHours);
 
@@ -93,7 +93,7 @@ public sealed class ListEmployeesHandler(IEmployeeRepository employees, IBranchC
     }
 
     internal static EmployeeDto Map(Employee e) => new(
-        e.Id, e.BranchId, e.DepartmentId, e.RoleId, e.FirstName, e.LastName, e.Email, e.Phone, e.HireDate);
+        e.Id, e.BranchId, e.DepartmentId, e.RoleId, e.FirstName, e.LastName, e.Email, e.Phone, e.HireDate, e.UserId);
 }
 
 public sealed class GetEmployeeHandler(IEmployeeRepository employees, IBranchContext branchContext)
@@ -107,6 +107,37 @@ public sealed class GetEmployeeHandler(IEmployeeRepository employees, IBranchCon
         }
         return ListEmployeesHandler.Map(e);
     }
+}
+
+// ---- Vínculo con el login (Auth API) ----
+public sealed class LinkEmployeeUserHandler(IEmployeeRepository employees, IUnitOfWork unitOfWork)
+{
+    public async Task HandleAsync(int employeeId, int userId, CancellationToken ct = default)
+    {
+        var e = await employees.GetAsync(employeeId, ct) ?? throw new NotFoundException("empleado", employeeId);
+        e.LinkUser(userId);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
+public sealed class UnlinkEmployeeUserHandler(IEmployeeRepository employees, IUnitOfWork unitOfWork)
+{
+    public async Task HandleAsync(int employeeId, CancellationToken ct = default)
+    {
+        var e = await employees.GetAsync(employeeId, ct) ?? throw new NotFoundException("empleado", employeeId);
+        e.UnlinkUser();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+}
+
+/// <summary>Consulta usada solo por la llamada interna servicio-a-servicio desde la Auth API
+/// (ver Endpoints/InternalEndpoints.cs) para validar un EmployeeId al crear un login. No aplica
+/// scoping de sucursal: a diferencia de GetEmployeeHandler, esta llamada no tiene un usuario
+/// logueado ni un branch activo detrás.</summary>
+public sealed class EmployeeExistsHandler(IEmployeeRepository employees)
+{
+    public async Task<bool> HandleAsync(int employeeId, CancellationToken ct = default)
+        => await employees.GetAsync(employeeId, ct) is not null;
 }
 
 // ---- Turnos (sub-recurso del empleado) ----

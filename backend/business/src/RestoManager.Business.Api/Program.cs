@@ -107,6 +107,9 @@ app.MapGet("/", () => Results.Ok(new { service = "RestoManager.Business.Api", st
 // Carta pública / QR (Fase 11): endpoints anónimos, siempre mapeados.
 app.MapPublicCatalogEndpoints();
 
+// Servicio-a-servicio (Auth API), protegido por Internal:ApiKey, no por JWT de usuario.
+app.MapInternalEndpoints();
+
 if (authEnabled)
 {
     app.MapMeEndpoints();

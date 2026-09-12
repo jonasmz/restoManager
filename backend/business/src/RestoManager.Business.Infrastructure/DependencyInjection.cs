@@ -34,6 +34,14 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<BusinessDevSeeder>();
 
+        var seedAdminSection = configuration.GetSection(SeedAdminEmployeeOptions.SectionName);
+        var seedAdmin = new SeedAdminEmployeeOptions();
+        seedAdmin.FirstName = seedAdminSection["FirstName"] ?? seedAdmin.FirstName;
+        seedAdmin.LastName = seedAdminSection["LastName"] ?? seedAdmin.LastName;
+        seedAdmin.Email = seedAdminSection["Email"] ?? seedAdmin.Email;
+        seedAdmin.Phone = seedAdminSection["Phone"] ?? seedAdmin.Phone;
+        services.AddSingleton(seedAdmin);
+
         // Fase 11: almacén de imágenes de la carta (sistema de archivos / volumen).
         var menuImagesPath = configuration["Storage:MenuImagesPath"]
             ?? Path.Combine(AppContext.BaseDirectory, "media", "menu");

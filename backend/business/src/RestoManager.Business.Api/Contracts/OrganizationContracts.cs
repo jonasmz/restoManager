@@ -16,6 +16,8 @@ public sealed record SaveDepartmentRequest(string Name, string Description);
 public sealed record SaveEmployeeRequest(
     int DepartmentId, int RoleId, string FirstName, string LastName, string Email, string Phone, DateOnly HireDate);
 
+public sealed record LinkEmployeeUserRequest(int UserId);
+
 public sealed record AddShiftRequest(DateTime StartTime, DateTime EndTime, decimal ScheduledHours);
 
 public sealed record RequestLeaveRequest(DateOnly StartDate, DateOnly EndDate, string LeaveType);

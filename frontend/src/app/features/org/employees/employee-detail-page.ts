@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } fro
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { AuthAdminApiService } from '../auth-admin-api.service';
 import { OrgApiService } from '../org-api.service';
 import { apiErrorMessage } from '../org-util';
 import { Employee, Leave, LEAVE_TYPES, Shift } from '../org.models';
@@ -17,6 +18,43 @@ import { Employee, Leave, LEAVE_TYPES, Shift } from '../org.models';
 
     @if (employee(); as e) {
       <h1 class="fs-3 mt-2 mb-4">{{ e.firstName }} {{ e.lastName }}</h1>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h2 class="fs-6 mb-3">Acceso al sistema</h2>
+          @if (accessError()) { <div class="alert alert-danger py-2 small">{{ accessError() }}</div> }
+
+          @if (e.userId) {
+            <p class="small text-secondary mb-2"><i class="ti ti-lock-check me-1 text-success"></i>Tiene acceso.</p>
+            <button type="button" class="btn btn-outline-danger btn-sm" (click)="unlinkAccess()">Quitar acceso</button>
+          } @else if (pendingUserId(); as uid) {
+            <p class="small text-warning mb-2">
+              El login se creó, pero no se pudo vincular al empleado.
+            </p>
+            <button type="button" class="btn btn-primary btn-sm" (click)="retryLink(uid)">Reintentar vínculo</button>
+          } @else {
+            <form [formGroup]="accessForm" (ngSubmit)="createAccess()" class="row g-2">
+              <div class="col-md-4">
+                <input type="email" class="form-control form-control-sm" formControlName="email" placeholder="Email de login" />
+              </div>
+              <div class="col-md-3">
+                <input type="password" class="form-control form-control-sm" formControlName="password" placeholder="Contraseña" />
+              </div>
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" formControlName="role">
+                  <option value="" disabled>Rol de acceso</option>
+                  @for (r of authRoles(); track r) { <option [value]="r">{{ r }}</option> }
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="accessForm.invalid || creatingAccess()">
+                  Crear acceso
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </div>
 
       <div class="row g-4">
         <!-- Turnos -->
@@ -88,12 +126,25 @@ export class EmployeeDetailPage implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(OrgApiService);
+  private readonly authApi = inject(AuthAdminApiService);
 
   protected readonly leaveTypes = LEAVE_TYPES;
   protected readonly employee = signal<Employee | null>(null);
   protected readonly shifts = signal<Shift[]>([]);
   protected readonly leaves = signal<Leave[]>([]);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly authRoles = signal<string[]>([]);
+  protected readonly accessError = signal<string | null>(null);
+  protected readonly creatingAccess = signal(false);
+  /** Id del AppUser creado en Auth cuando el link a Business falló, para poder reintentarlo. */
+  protected readonly pendingUserId = signal<number | null>(null);
+
+  protected readonly accessForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    role: ['', Validators.required],
+  });
 
   protected readonly shiftForm = this.fb.nonNullable.group({
     startTime: ['', Validators.required],
@@ -117,6 +168,7 @@ export class EmployeeDetailPage implements OnInit {
     });
     this.reloadShifts();
     this.reloadLeaves();
+    this.authApi.listRoles().subscribe({ next: (roles) => this.authRoles.set(roles) });
   }
 
   protected badge(status: string): string {
@@ -168,6 +220,50 @@ export class EmployeeDetailPage implements OnInit {
     this.api.leaveAction(this.employeeId, leaveId, action).subscribe({
       next: () => this.reloadLeaves(),
       error: (err) => this.error.set(apiErrorMessage(err)),
+    });
+  }
+
+  protected createAccess(): void {
+    const e = this.employee();
+    if (this.accessForm.invalid || !e) {
+      return;
+    }
+    const v = this.accessForm.getRawValue();
+    this.accessError.set(null);
+    this.creatingAccess.set(true);
+    this.authApi
+      .createUser({ email: v.email, password: v.password, role: v.role, employeeId: e.id, branchIds: [e.branchId] })
+      .subscribe({
+        next: (created) => {
+          this.creatingAccess.set(false);
+          this.retryLink(created.id);
+        },
+        error: (err) => {
+          this.creatingAccess.set(false);
+          this.accessError.set(apiErrorMessage(err));
+        },
+      });
+  }
+
+  protected retryLink(userId: number): void {
+    this.accessError.set(null);
+    this.api.linkEmployeeUser(this.employeeId, userId).subscribe({
+      next: () => {
+        this.pendingUserId.set(null);
+        this.api.getEmployee(this.employeeId).subscribe((e) => this.employee.set(e));
+      },
+      error: (err) => {
+        this.pendingUserId.set(userId);
+        this.accessError.set(apiErrorMessage(err));
+      },
+    });
+  }
+
+  protected unlinkAccess(): void {
+    this.accessError.set(null);
+    this.api.unlinkEmployeeUser(this.employeeId).subscribe({
+      next: () => this.api.getEmployee(this.employeeId).subscribe((e) => this.employee.set(e)),
+      error: (err) => this.accessError.set(apiErrorMessage(err)),
     });
   }
 }

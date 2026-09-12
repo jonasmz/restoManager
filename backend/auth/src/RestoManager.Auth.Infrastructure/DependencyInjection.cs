@@ -6,6 +6,7 @@ using RestoManager.Auth.Domain.Abstractions;
 using RestoManager.Auth.Domain.RefreshTokens;
 using RestoManager.Auth.Domain.Tokens;
 using RestoManager.Auth.Domain.Users;
+using RestoManager.Auth.Infrastructure.Http;
 using RestoManager.Auth.Infrastructure.Identity;
 using RestoManager.Auth.Infrastructure.Persistence;
 using RestoManager.Auth.Infrastructure.RefreshTokens;
@@ -38,6 +39,19 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserDirectory, IdentityUserDirectory>();
         services.AddScoped<IdentityDataSeeder>();
+
+        var businessOptions = configuration.GetSection(BusinessApiOptions.SectionName).Get<BusinessApiOptions>()
+            ?? new BusinessApiOptions();
+        services.AddSingleton(businessOptions);
+        services.AddHttpClient<IEmployeeDirectoryClient, BusinessEmployeeDirectoryClient>(client =>
+        {
+            client.BaseAddress = new Uri(businessOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(5);
+            if (!string.IsNullOrEmpty(businessOptions.InternalApiKey))
+            {
+                client.DefaultRequestHeaders.Add("X-Internal-Key", businessOptions.InternalApiKey);
+            }
+        });
 
         services
             .AddIdentityCore<AppUser>(o =>
