@@ -2,6 +2,9 @@
 .env
 .env.*
 !.env.example
+
+# Config runtime del frontend generada por docker-compose (ver frontend/public/env.example.js)
+frontend/public/env.js
 *.pem
 *.key
 *.pfx

@@ -28,7 +28,7 @@ export class AuthService {
 
   login(email: string, password: string): Observable<void> {
     return this.http
-      .post<TokenResponse>(`${this.base}/auth/login`, { email, password })
+      .post<TokenResponse>(`${this.base}/login`, { email, password })
       .pipe(
         tap((res) => this.applyTokens(res)),
         map(() => undefined),
@@ -42,7 +42,7 @@ export class AuthService {
       return throwError(() => new Error('No hay refresh token.'));
     }
     return this.http
-      .post<TokenResponse>(`${this.base}/auth/refresh`, { refreshToken })
+      .post<TokenResponse>(`${this.base}/refresh`, { refreshToken })
       .pipe(
         tap((res) => this.applyTokens(res)),
         map((res) => res.accessToken),
@@ -52,7 +52,7 @@ export class AuthService {
   logout(): void {
     const refreshToken = this.storage.refresh;
     if (refreshToken) {
-      this.http.post(`${this.base}/auth/logout`, { refreshToken }).subscribe({ error: () => undefined });
+      this.http.post(`${this.base}/logout`, { refreshToken }).subscribe({ error: () => undefined });
     }
     this.clearSession();
     void this.router.navigate(['/auth/signin']);

@@ -49,7 +49,12 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdmin", policy => policy.RequireRole("ADMIN"));
 
-var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+// Lista de orígenes permitidos, configurable sin recompilar (Cors__Origins__0, ...
+// en deploy/.env; ver deploy/docker-compose.yml). Detrás de nginx (deploy/nginx/)
+// el frontend y las APIs comparten origin y esta lista no interviene; queda para
+// accesos directos a la API (Swagger, herramientas) desde otro origin.
+var corsOrigins = (builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [])
+    .Where(o => !string.IsNullOrWhiteSpace(o)).ToArray();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
 

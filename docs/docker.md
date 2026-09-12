@@ -16,9 +16,20 @@ Lo único que se necesita en el host es **Docker** + **Docker Compose**.
 | Servicio | Imagen base | Puerto host | Rol |
 |---|---|---|---|
 | `postgres` | `postgres:17` | 5432 | Motor de datos. Dos bases: `resto_identity` y `resto_business` |
-| `backend-auth` | `mcr.microsoft.com/dotnet/sdk:10.0` | 5001 | Auth API — `dotnet watch run` |
-| `backend-business` | `mcr.microsoft.com/dotnet/sdk:10.0` | 5002 | Business API — `dotnet watch run` |
-| `frontend` | `node:22` | 4200 | `ng serve --host 0.0.0.0 --poll 2000` |
+| `backend-auth` | `mcr.microsoft.com/dotnet/sdk:10.0` | — (interno) | Auth API — `dotnet watch run` |
+| `backend-business` | `mcr.microsoft.com/dotnet/sdk:10.0` | — (interno) | Business API — `dotnet watch run` |
+| `frontend` | `node:22` | — (interno) | `ng serve --host 0.0.0.0 --poll 2000` |
+| `nginx` | `nginx:1.27-alpine` | `GATEWAY_PORT` (80) | Reverse proxy: único punto de entrada publicado al host, rutea por path a los tres de arriba (`deploy/nginx/nginx.conf`) |
+
+`frontend`, `backend-auth` y `backend-business` **no publican puerto al host** —
+solo son alcanzables vía `nginx` o con `docker compose exec/run`. Evita exponer
+directamente los API de desarrollo (sin TLS, CORS abierto por defecto en dev) y
+resuelve de paso el acceso desde otros dispositivos de la LAN: como todo queda bajo
+un único origin (el de `nginx`), el frontend no necesita saber la IP/dominio del
+backend (ver `frontend/src/app/core/config/environment.ts`, config runtime vía
+`public/env.js`) ni el backend necesita permitir CORS para el uso normal (`Cors:Origins`,
+configurable por `.env`, queda solo para acceso directo a una API sin pasar por
+`nginx`).
 
 Notas de diseño:
 
@@ -79,15 +90,19 @@ docker compose exec postgres pg_dump -U postgres resto_business > backup.sql
 
 ## Puertos
 
-| Servicio | URL de desarrollo |
+| Acceso | URL |
 |---|---|
-| Frontend | http://localhost:4200 |
-| Auth API | http://localhost:5001 (Swagger en `/swagger`) |
-| Business API | http://localhost:5002 (Swagger en `/swagger`) |
+| App completa (frontend + APIs, vía `nginx`) | http://localhost (o `http://<ip-del-host>` desde otro dispositivo de la LAN) |
 | PostgreSQL | `localhost:5432` (usuario/clave del `.env`) |
 
-Dentro de la red de compose, el frontend y la Business API se refieren a las otras
-por nombre de servicio (`http://backend-auth:5001`, etc.), no por `localhost`.
+`frontend`, `backend-auth` y `backend-business` no publican puerto propio (ver
+tabla de servicios); todo pasa por `nginx` en el puerto `GATEWAY_PORT` (80 por
+defecto). Para pegarle a una API puntual sin pasar por el proxy (Swagger,
+debugging), usar `docker compose exec <servicio> curl http://localhost:8080/...`
+o reexponer el puerto momentáneamente en `docker-compose.yml`.
+
+Dentro de la red de compose, los servicios se refieren entre sí por nombre
+(`http://backend-auth:8080`, etc.), no por `localhost`.
 
 ## Decisiones a confirmar antes de crear el compose
 
